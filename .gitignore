@@ -1,0 +1,20 @@
+# Секреты
+.env
+GOOGLE_API_KEY
+
+# База данных
+*.db
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+.ve
+
+# IDE
+.vscode/
+.idea/
+main_backup.py
+test.py
+fill.py

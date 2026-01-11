@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <title>English Learner PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Анимация раскрытия */
+        .details-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+            opacity: 0;
+        }
+
+        .card-active .details-container {
+            max-height: 800px;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+
+        .blur-text {
+            filter: blur(12px);
+            transition: filter 0.3s;
+        }
+
+        .card-active .blur-text {
+            filter: blur(0);
+        }
+
+        /* Поворот стрелки */
+        .chevron {
+            transition: transform 0.3s ease;
+        }
+
+        .card-active .chevron {
+            transform: rotate(180deg);
+        }
+
+        /* Модалки */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Спиннер загрузки */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            width: 1.2rem;
+            height: 1.2rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Активные состояния фильтров */
+        .active-cat {
+            background: #4f46e5 !important;
+            color: white !important;
+            border-color: #4f46e5 !important;
+            shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+
+        /* Цветовое кодирование по Уровням (Левая граница) */
+        .lvl-a1 {
+            border-left: 8px solid #22c55e !important;
+        }
+
+        .lvl-a2 {
+            border-left: 8px solid #eab308 !important;
+        }
+
+        .lvl-b1 {
+            border-left: 8px solid #0ea5e9 !important;
+        }
+
+        .lvl-b2 {
+            border-left: 8px solid #a855f7 !important;
+        }
+
+        .lvl-c1 {
+            border-left: 8px solid #f97316 !important;
+        }
+
+        .lvl-c2 {
+            border-left: 8px solid #ef4444 !important;
+        }
+
+        /* Активные состояния для уровней */
+        .active-lvl[onclick*="A1"] {
+            background: #22c55e !important;
+            color: white !important;
+        }
+
+        .active-lvl[onclick*="A2"] {
+            background: #eab308 !important;
+            color: white !important;
+        }
+
+        .active-lvl[onclick*="B1"] {
+            background: #0ea5e9 !important;
+            color: white !important;
+        }
+
+        .active-lvl[onclick*="B2"] {
+            background: #a855f7 !important;
+            color: white !important;
+        }
+
+        .active-lvl[onclick*="C1"] {
+            background: #f97316 !important;
+            color: white !important;
+        }
+
+        .active-lvl[onclick*="C2"] {
+            background: #ef4444 !important;
+            color: white !important;
+        }
+
+        .active-lvl[onclick*="All"] {
+            background: #4f46e5 !important;
+            color: white !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 text-slate-900 font-sans">
+
+<div class="max-w-2xl mx-auto">
+    <header class="text-center mb-10">
+        <h1 class="text-4xl font-black text-slate-800 tracking-tight italic">MY <span
+                class="text-indigo-600">CARDS</span></h1>
+
+        <div class="mt-6 flex justify-center">
+            <button onclick="toggleSort()" id="sortBtn"
+                    class="text-xs font-bold bg-white border border-slate-200 px-4 py-2 rounded-full hover:bg-slate-50 transition-all text-slate-600 shadow-sm">
+                Сортировка: По дате ↓
+            </button>
+        </div>
+    </header>
+
+    <form id="addWordForm"
+          class="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 mb-10 flex flex-wrap md:flex-nowrap gap-3 border border-slate-100">
+        <input type="text" id="target_word" placeholder="Word" required
+               class="flex-1 min-w-[150px] p-3 outline-none focus:ring-2 ring-indigo-500 rounded-xl bg-slate-50">
+        <button type="submit" id="submitBtn"
+                class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 min-w-[120px]">
+            <span id="btnText">Add</span>
+            <div id="btnSpinner" class="spinner hidden"></div>
+        </button>
+    </form>
+
+    <div class="flex justify-center items-center px-2 mb-8 mt-8 gap-5 flex-wrap">
+        <a href="/quiz"
+           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">UA
+            to US</a>
+        <a href="/quiz_translate"
+           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">US
+            to UA</a>
+        <a href="/flashcards"
+           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Flash
+            Cards</a>
+    </div>
+
+    <div id="categoryFilters" class="mt-6 flex flex-wrap justify-center gap-2">
+        <button onclick="filterByCategory('All')"
+                class="cat-filter active-cat px-4 py-1.5 rounded-full text-xs font-bold border transition-all">All
+        </button>
+        <button onclick="filterByCategory('Phrases')"
+                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Phrases
+        </button>
+        <button onclick="filterByCategory('Verbs')"
+                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Verbs
+        </button>
+        <button onclick="filterByCategory('Nouns')"
+                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Nouns
+        </button>
+        <button onclick="filterByCategory('Adjectives')"
+                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Adjectives
+        </button>
+        <button onclick="filterByCategory('Adverbs')"
+                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Adverbs
+        </button>
+    </div>
+
+    <div id="levelFilters" class="mt-4 flex flex-wrap justify-center gap-2">
+        <button onclick="filterByLevel('All')" data-level='All'
+                class="active-lvl px-3 py-1 rounded-lg text-[10px] font-bold border border-slate-200 transition-all uppercase">
+            All Levels
+        </button>
+        <button onclick="filterByLevel('A1')" data-level='A1'
+                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-green-200 text-green-600">A1
+        </button>
+        <button onclick="filterByLevel('A2')" data-level='A2'
+                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-yellow-200 text-yellow-600">A2
+        </button>
+        <button onclick="filterByLevel('B1')" data-level='B1'
+                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-blue-200 text-blue-600">B1
+        </button>
+        <button onclick="filterByLevel('B2')" data-level='B2'
+                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-purple-200 text-purple-600">B2
+        </button>
+        <button onclick="filterByLevel('C1')" data-level='C1'
+                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-orange-200 text-orange-600">C1
+        </button>
+        <button onclick="filterByLevel('C2')" data-level='C2'
+                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-red-200 text-red-600">C2
+        </button>
+    </div>
+
+    <div class="flex justify-between items-center px-2 mb-3 mt-8">
+        <div id="resultsCounter"
+             class="text-xs font-bold bg-white border border-slate-200 text-slate-600 px-6 py-2 rounded-full shadow-sm">
+            Found: 0 words
+        </div>
+        <div id="activeFilters" class="text-[10px] font-bold text-indigo-400 uppercase italic"></div>
+    </div>
+
+    <div id="wordsList" class="space-y-4 mt-6"></div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md mx-4">
+        <h2 class="text-2xl font-bold mb-6">Редактировать</h2>
+        <input type="hidden" id="edit_id">
+        <div class="space-y-4">
+            <input type="text" id="edit_target"
+                   class="w-full p-3 border rounded-xl outline-none focus:ring-2 ring-indigo-500 bg-slate-50">
+            <input type="text" id="edit_translation"
+                   class="w-full p-3 border rounded-xl outline-none focus:ring-2 ring-indigo-500 bg-slate-50">
+            <input type="text" id="edit_category"
+                   class="w-full p-3 border rounded-xl outline-none focus:ring-2 ring-indigo-500 bg-slate-50">
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveEdit()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">Save
+                </button>
+                <button onclick="closeModal('editModal')"
+                        class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="deleteModal" class="modal">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm mx-4 text-center">
+        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            🗑️
+        </div>
+        <h2 class="text-2xl font-bold mb-2">Удалить?</h2>
+        <div class="flex gap-3 mt-6">
+            <button onclick="confirmDelete()" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold">Delete
+            </button>
+            <button onclick="closeModal('deleteModal')" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let wordIdToDelete = null;
+    let currentSort = 'date';
+    let currentCategory = 'All';
+    let currentLevel = 'All';
+
+    // ТВОЯ ЛОГИКА РАНГОВ
+    function getRankConfig(group, type) {
+        const g = group ? group.toLowerCase() : '';
+        const t = type ? type.toLowerCase() : 'word';
+        const styles = {
+            green: {badge: 'bg-green-100 text-green-700 border-green-200'},
+            teal: {badge: 'bg-teal-100 text-teal-700 border-teal-200'},
+            blue: {badge: 'bg-blue-100 text-blue-700 border-blue-200'},
+            indigo: {badge: 'bg-indigo-100 text-indigo-700 border-indigo-200'},
+            purple: {badge: 'bg-purple-100 text-purple-700 border-purple-200'},
+            orange: {badge: 'bg-orange-100 text-orange-700 border-orange-200'}
+        };
+
+        if (t === 'phrase') {
+            if (g.includes('very common')) return styles.green;
+            if (g.includes('common')) return styles.blue;
+            if (g.includes('less common')) return styles.indigo;
+            return styles.orange;
+        } else {
+            if (g.includes('core 500')) return styles.green;
+            if (g.includes('core 1000')) return styles.teal;
+            if (g.includes('core plus')) return styles.blue;
+            if (g.includes('active basic')) return styles.indigo;
+            if (g.includes('fluent') || g.includes('active extended') || g.includes('advanced')) return styles.purple;
+            return styles.orange;
+        }
+    }
+
+    // ЛОГИКА ЦВЕТА ЛЕВОЙ ГРАНИЦЫ (ПО УРОВНЮ)
+    function getLevelBorderClass(level) {
+        const lvl = (level || 'A1').toUpperCase();
+        if (lvl.includes('A1')) return 'lvl-a1';
+        if (lvl.includes('A2')) return 'lvl-a2';
+        if (lvl.includes('B1')) return 'lvl-b1';
+        if (lvl.includes('B2')) return 'lvl-b2';
+        if (lvl.includes('C1')) return 'lvl-c1';
+        if (lvl.includes('C2')) return 'lvl-c2';
+        return 'lvl-a1';
+    }
+
+    function getLevelDotStyle(level) {
+        const lvl = (level || 'A1').toUpperCase();
+        const colors = {
+            'A1': 'text-green-500',
+            'A2': 'text-yellow-500',
+            'B1': 'text-blue-500',
+            'B2': 'text-purple-500',
+            'C1': 'text-orange-500',
+            'C2': 'text-red-500'
+        };
+        const key = Object.keys(colors).find(k => lvl.includes(k)) || 'A1';
+        return colors[key];
+    }
+
+    async function loadWords() {
+        const response = await fetch('/words');
+        let words = await response.json();
+        const list = document.getElementById('wordsList');
+        list.innerHTML = '';
+
+        if (currentCategory !== 'All') words = words.filter(w => w.category === currentCategory);
+        if (currentLevel !== 'All') words = words.filter(w => w.level && w.level.includes(currentLevel));
+
+        document.getElementById('resultsCounter').innerText = `Found: ${words.length} words`;
+        document.getElementById('activeFilters').innerText = `${currentCategory} / ${currentLevel}`;
+
+        words.sort((a, b) => {
+            if (a.is_learned !== b.is_learned) return a.is_learned - b.is_learned;
+            if (currentSort === 'rank') return (parseInt(a.rank) || 99999) - (parseInt(b.rank) || 99999);
+            return b.id - a.id;
+        });
+
+        words.forEach(word => {
+            const rankConfig = getRankConfig(word.frequency_group, word.type);
+            const borderClass = getLevelBorderClass(word.level);
+            const dotStyle = getLevelDotStyle(word.level);
+
+            const synonymsList = word.synonyms && word.synonyms !== "Synonyms not found"
+                ? word.synonyms.split(',').map(syn =>
+                    `<div class="text-indigo-500 font-medium">• ${syn}</div>`
+                ).join('\n')
+                : '<span class="text-slate-300 italic text-xs">No synonyms found</span>';
+
+            const card = document.createElement('div');
+            card.id = `card-${word.id}`;
+            card.className = `bg-white p-5 rounded-2xl shadow-sm transition-all ${borderClass} ${word.is_learned ? 'opacity-50 grayscale-[0.6]' : ''}`;
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center flex-wrap gap-2">
+                                <h3 class="text-xl font-bold text-slate-800">${word.word}</h3>
+                                <button onclick="speak('${word.word.replace(/'/g, "\\'")}')" class="text-slate-300 hover:text-indigo-500 p-1">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM7 9H3v6h4l5 5V4L7 9z"/></svg>
+                                </button>
+                                <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded border ${rankConfig.badge}">
+                                    ${word.frequency_group} ${word.rank ? '#' + word.rank : ''}
+                                </span>
+                                <div class="flex items-center gap-1 text-[11px] font-bold text-slate-500">
+                                    <span class="${dotStyle} text-[14px]">●</span>
+                                    <span>${word.level || 'A1'}</span>
+                                </div>
+                            </div>
+
+                            <button onclick="toggleDetails(${word.id})" class="mt-2 text-indigo-500 text-[11px] font-bold flex items-center gap-1 uppercase">
+                                <span>Details</span>
+                                <svg class="chevron w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+
+
+                            <div class="details-container">
+                                <div class="blur-text border-t border-slate-50 pt-3">
+                                    <p class="text-indigo-600 font-black text-xl mb-3">${word.translation}</p>
+                                    <div class="text-sm text-slate-500 italic border-l-2 border-slate-200 pl-4">
+                                        ${word.examples ? word.examples.split('\n').join('<br>') : 'No examples'}
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Synonyms</span>
+                                    <div class="space-y-1 text-sm">
+                                        ${synonymsList}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1 ml-4">
+                            <button onclick="toggleLearned(${word.id})" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-green-50">${word.is_learned ? '✅' : '✔️'}</button>
+                            <button onclick="openEditModal(${word.id}, '${word.word.replace(/'/g, "\\'")}', '${word.translation.replace(/'/g, "\\'")}', '${word.category.replace(/'/g, "\\'")}')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-indigo-50 text-slate-400">✏️</button>
+                            <button onclick="requestDelete(${word.id})" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-slate-400">🗑️</button>
+                        </div>
+                    </div>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    // Вспомогательные функции
+    function filterByCategory(cat) {
+        currentCategory = cat;
+        document.querySelectorAll('.cat-filter').forEach(btn => btn.classList.toggle('active-cat', btn.innerText === cat));
+        loadWords();
+    }
+
+    function filterByLevel(lvl) {
+        currentLevel = lvl;
+        document.querySelectorAll('#levelFilters button').forEach(btn => btn.classList.toggle('active-lvl', (btn.dataset.level || btn.innerText) === lvl));
+        loadWords();
+    }
+
+    function toggleSort() {
+        currentSort = currentSort === 'date' ? 'rank' : 'date';
+        document.getElementById('sortBtn').innerText = currentSort === 'date' ? 'Сортировка: По дате ↓' : 'Сортировка: По Rank ↑';
+        loadWords();
+    }
+
+    function toggleDetails(id) {
+        document.getElementById(`card-${id}`).classList.toggle('card-active');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    async function toggleLearned(id) {
+        await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
+        loadWords();
+    }
+
+    function openEditModal(id, word, trans, cat) {
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_target').value = word;
+        document.getElementById('edit_translation').value = trans;
+        document.getElementById('edit_category').value = cat;
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    async function saveEdit() {
+        const id = document.getElementById('edit_id').value;
+        const w = document.getElementById('edit_target').value;
+        const t = document.getElementById('edit_translation').value;
+        const c = document.getElementById('edit_category').value;
+        await fetch(`/words/${id}?word=${encodeURIComponent(w)}&translation=${encodeURIComponent(t)}&category=${encodeURIComponent(c)}`, {method: 'PUT'});
+        closeModal('editModal');
+        loadWords();
+    }
+
+    function requestDelete(id) {
+        wordIdToDelete = id;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    async function confirmDelete() {
+        if (wordIdToDelete) {
+            await fetch(`/words/${wordIdToDelete}`, {method: 'DELETE'});
+            closeModal('deleteModal');
+            loadWords();
+        }
+    }
+
+    function speak(text) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        const v = window.speechSynthesis.getVoices();
+        u.voice = v.find(v => v.lang.startsWith('en-US')) || v.find(v => v.lang.startsWith('en'));
+        u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+    }
+
+    document.getElementById('addWordForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        const word = document.getElementById('target_word').value;
+        btn.disabled = true;
+        document.getElementById('btnText').innerText = 'Searching...';
+        document.getElementById('btnSpinner').classList.remove('hidden');
+        try {
+            await fetch(`/words?word=${encodeURIComponent(word)}`, {method: 'POST'});
+            e.target.reset();
+        } finally {
+            btn.disabled = false;
+            document.getElementById('btnText').innerText = 'Add';
+            document.getElementById('btnSpinner').classList.add('hidden');
+            loadWords();
+        }
+    };
+
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    loadWords();
+</script>
+</body>
+</html>
