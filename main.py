@@ -2,13 +2,13 @@ import datetime
 import json
 import os
 import re
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.params import Query
 from fastapi.staticfiles import StaticFiles
 from google import genai
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Session, SQLModel, create_engine, select, true
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
 
@@ -45,6 +45,7 @@ I am learning English words and phrases. Provide usage examples, translations, a
     "word": "",
     "level": "B2",
     "type": "word | phrase",
+    "is_phrasal": true | false,  // Set true only for phrasal verbs like "take off", "get out".
     "frequency": 1-10,
     "rank": 1234,
     "rank_range": "1001-2000",
@@ -93,6 +94,7 @@ class Word(SQLModel, table=True):
     frequency_group: str = Field(nullable=False)
     category: str = Field(nullable=False)
     type: str = Field(nullable=False)
+    is_phrasal: bool = Field(default=False)
     is_learned: bool = Field(default=False)
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
 
@@ -149,6 +151,7 @@ def get_usage_examples(word: str) -> dict:
         "examples": (
             "\n".join(unique_examples) if unique_examples else "Examples not found"
         ),
+        "is_phrasal": bool(data.get("is_phrasal", False)),
         "synonyms": synonyms,
     }
 
@@ -173,31 +176,21 @@ async def flashcards_page(request: Request):
     return templates.TemplateResponse("flashcards.html", {"request": request})
 
 
-@app.get("/words", response_model=List[Word])
-def get_words(session: Session = Depends(get_session)):
-    statement = select(Word).order_by(Word.created_at.desc())
-    return session.exec(statement).all()
-
-
 @app.get("/phrasal", response_class=HTMLResponse)
 async def phrasal_page(request: Request):
     return templates.TemplateResponse("phrasal_verbs.html", {"request": request})
 
 
-@app.get("/words/phrasal/{root}")
-def get_phrasal_verbs(root: str, session: Session = Depends(get_session)):
-    # Ищем слова, которые начинаются на root + пробел (чтобы не зацепить 'getting')
-    # И фильтруем по типу 'phrase' или по наличию пробела
-    search = f"{root.lower()} %"
-    statement = select(Word).where(Word.word.like(search))
-    words = session.exec(statement).all()
-    return words
+@app.get("/words", response_model=list[Word])
+def get_words(session: Session = Depends(get_session)):
+    statement = select(Word).order_by(Word.created_at.desc())
+    return session.exec(statement).all()
 
 
 @app.post("/words", response_model=Word)
 def create_word(
-    word_text: str = Query(..., alias="word"),
-    session: Session = Depends(get_session),
+        word_text: str = Query(..., alias="word"),
+        session: Session = Depends(get_session),
 ):
     word_info = get_usage_examples(word=word_text)
 
@@ -213,6 +206,7 @@ def create_word(
         type=word_info["type"],
         frequency=word_info["frequency"],
         frequency_group=word_info["frequency_group"],
+        is_phrasal=word_info["is_phrasal"],
     )
     session.add(new_word)
     session.commit()
@@ -220,13 +214,44 @@ def create_word(
     return new_word
 
 
+@app.get("/words/phrasal_roots")
+def get_phrasal_roots(session: Session = Depends(get_session)):
+    """
+    Extracts unique roots ONLY from words marked as is_phrasal.
+    """
+    statement = select(Word).where(Word.is_phrasal == true())
+    phrasal_verbs = session.exec(statement).all()
+
+    roots = set()
+    for v in phrasal_verbs:
+        parts = v.word.split()
+        if parts:
+            roots.add(parts[0].strip().capitalize())
+
+    return sorted(list(roots))
+
+
+@app.get("/words/phrasal/{root}", response_model=list[Word])
+def get_phrasal_verbs(root: str, session: Session = Depends(get_session)):
+    """
+    Fetches phrasal verbs by root and strict is_phrasal flag.
+    """
+    search_pattern = f"{root.lower()} %"
+    statement = (
+        select(Word)
+        .where(Word.word.like(search_pattern))
+        .where(Word.is_phrasal == true())
+    )
+    return session.exec(statement).all()
+
+
 @app.put("/words/{word_id}", response_model=Word)
 def update_word(
-    word_id: int,
-    word: str,
-    translation: str,
-    category: str,
-    session: Session = Depends(get_session),
+        word_id: int,
+        word: str,
+        translation: str,
+        category: str,
+        session: Session = Depends(get_session),
 ):
     db_word = session.get(Word, word_id)
     if not db_word:

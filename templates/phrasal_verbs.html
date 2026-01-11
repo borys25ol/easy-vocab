@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
     <title>Phrasal Verbs Explorer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/js/shared.js"></script>
     <script src="/static/js/card-renderer.js"></script>
     <style>
-        /* Shared animations and card states */
         .details-container {
             max-height: 0;
             overflow: hidden;
@@ -39,7 +39,6 @@
             transform: rotate(180deg);
         }
 
-        /* Level border styles */
         .lvl-a1 {
             border-left: 8px solid #22c55e !important;
         }
@@ -64,13 +63,42 @@
             border-left: 8px solid #ef4444 !important;
         }
 
-        /* Verb selector button styling */
         .active-verb {
             background: #4f46e5 !important;
             color: white !important;
             border-color: #4f46e5 !important;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            width: 1.2rem;
+            height: 1.2rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
         }
     </style>
 </head>
@@ -83,52 +111,87 @@
             Back to Cards</a>
         <h1 class="text-4xl font-black text-slate-800 tracking-tight italic mt-4">PHRASAL <span class="text-indigo-600">VERBS</span>
         </h1>
-        <p class="text-slate-500 text-sm mt-2">Explore verbs by their root component</p>
+        <p class="text-slate-500 text-sm mt-2">Manage and explore verbs by root components</p>
     </header>
 
+    <form id="addPhrasalForm"
+          class="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 mb-10 flex flex-wrap md:flex-nowrap gap-3 border border-slate-100">
+        <input type="text" id="target_word" placeholder="Enter phrasal verb (e.g., Get up)..." required
+               class="flex-1 min-w-[150px] p-3 outline-none focus:ring-2 ring-indigo-500 rounded-xl bg-slate-50">
+        <button type="submit" id="submitBtn"
+                class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
+            <span id="btnText">Add</span>
+            <div id="btnSpinner" class="spinner hidden"></div>
+        </button>
+    </form>
+
     <div id="verbSelector" class="flex flex-wrap gap-2 mb-10 justify-center">
-        <button onclick="loadPhrasal('Get')"
-                class="verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            Get
-        </button>
-        <button onclick="loadPhrasal('Take')"
-                class="verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            Take
-        </button>
-        <button onclick="loadPhrasal('Look')"
-                class="verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            Look
-        </button>
-        <button onclick="loadPhrasal('Put')"
-                class="verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            Put
-        </button>
-        <button onclick="loadPhrasal('Go')"
-                class="verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            Go
-        </button>
-        <button onclick="loadPhrasal('Bring')"
-                class="verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            Bring
-        </button>
-        <button onclick="loadPhrasal('Keep')"
-                class="verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-            Keep
-        </button>
     </div>
 
     <div id="phrasalResultsCounter" class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 text-center">
         Select a verb to start
     </div>
 
-    <div id="phrasalList" class="space-y-4">
+    <div id="phrasalList" class="space-y-4"></div>
+</div>
+
+<div id="editModal" class="modal">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md mx-4">
+        <h2 class="text-2xl font-bold mb-6">Edit Verb</h2>
+        <input type="hidden" id="edit_id">
+        <div class="space-y-4">
+            <input type="text" id="edit_target"
+                   class="w-full p-3 border rounded-xl outline-none focus:ring-2 ring-indigo-500 bg-slate-50">
+            <input type="text" id="edit_translation"
+                   class="w-full p-3 border rounded-xl outline-none focus:ring-2 ring-indigo-500 bg-slate-50">
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveEdit()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">Save
+                </button>
+                <button onclick="closeModal('editModal')"
+                        class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="deleteModal" class="modal">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm mx-4 text-center">
+        <h2 class="text-2xl font-bold mb-2">Delete?</h2>
+        <div class="flex gap-3 mt-6">
+            <button onclick="confirmDelete()" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold">Delete
+            </button>
+            <button onclick="closeModal('deleteModal')" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancel
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
-    // FETCH PHRASAL VERBS FROM DATABASE
+    let currentRoot = '';
+    let wordIdToDelete = null;
+
+    // Load available phrasal verb roots from the server
+    async function refreshRoots() {
+        const response = await fetch('/words/phrasal_roots');
+        const roots = await response.json();
+        const selector = document.getElementById('verbSelector');
+
+        selector.innerHTML = '';
+        roots.forEach(root => {
+            const btn = document.createElement('button');
+            btn.onclick = () => loadPhrasal(root);
+            btn.className = `verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm ${currentRoot === root ? 'active-verb' : ''}`;
+            btn.innerText = root;
+            selector.appendChild(btn);
+        });
+    }
+
+    // Load verbs for a specific root
     async function loadPhrasal(root) {
-        // Toggle active button style
+        currentRoot = root;
+        document.getElementById('target_word').value = root + ' ';
+
         document.querySelectorAll('.verb-btn').forEach(btn => {
             btn.classList.toggle('active-verb', btn.innerText === root);
         });
@@ -136,19 +199,80 @@
         const response = await fetch(`/words/phrasal/${root}`);
         const words = await response.json();
         const list = document.getElementById('phrasalList');
-        const counter = document.getElementById('phrasalResultsCounter');
-
         list.innerHTML = '';
-        counter.innerText = `Found ${words.length} variants for "${root}"`;
+        document.getElementById('phrasalResultsCounter').innerText = `Found ${words.length} variants for "${root}"`;
 
         words.forEach(word => {
-            // USING THE SHARED RENDERER
             list.insertAdjacentHTML('beforeend', renderWordCard(word));
         });
     }
 
-    // Initialize voices
+    // Handle form submission for adding new verbs
+    document.getElementById('addPhrasalForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        const word = document.getElementById('target_word').value;
+
+        btn.disabled = true;
+        document.getElementById('btnText').innerText = 'Adding...';
+        document.getElementById('btnSpinner').classList.remove('hidden');
+
+        try {
+            await fetch(`/words?word=${encodeURIComponent(word)}`, {method: 'POST'});
+            await refreshRoots();
+            if (currentRoot) loadPhrasal(currentRoot);
+            e.target.reset();
+        } finally {
+            btn.disabled = false;
+            document.getElementById('btnText').innerText = 'Add';
+            document.getElementById('btnSpinner').classList.add('hidden');
+        }
+    };
+
+    // UI Helpers
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    function openEditModal(id, word, trans, cat) {
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_target').value = word;
+        document.getElementById('edit_translation').value = trans;
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    async function saveEdit() {
+        const id = document.getElementById('edit_id').value;
+        const w = document.getElementById('edit_target').value;
+        const t = document.getElementById('edit_translation').value;
+        await fetch(`/words/${id}?word=${encodeURIComponent(w)}&translation=${encodeURIComponent(t)}`, {method: 'PUT'});
+        closeModal('editModal');
+        if (currentRoot) loadPhrasal(currentRoot);
+    }
+
+    function requestDelete(id) {
+        wordIdToDelete = id;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    async function confirmDelete() {
+        if (wordIdToDelete) {
+            await fetch(`/words/${wordIdToDelete}`, {method: 'DELETE'});
+            closeModal('deleteModal');
+            await refreshRoots();
+            if (currentRoot) loadPhrasal(currentRoot);
+        }
+    }
+
+    async function toggleLearned(id) {
+        await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
+        if (currentRoot) loadPhrasal(currentRoot);
+    }
+
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+
+    // Initial load
+    refreshRoots();
 </script>
 </body>
 </html>
