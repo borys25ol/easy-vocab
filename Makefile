@@ -6,7 +6,7 @@ ve:
 clean:
 	test -d .ve && rm -rf .ve
 
-runserver-dev:
+runserver:
 	uvicorn main:app --reload --host 0.0.0.0 --port 8000 --reload
 
 run_hooks:

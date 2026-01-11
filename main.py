@@ -5,6 +5,7 @@ import re
 from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.params import Query
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +14,8 @@ from google.genai.types import GenerateContentConfig
 from sqlmodel import Field, Session, SQLModel, create_engine, select, true
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
+
+load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
@@ -199,7 +202,7 @@ async def phrasal_page(request: Request) -> HTMLResponse:
 
 
 @app.get("/idioms", response_class=HTMLResponse)
-async def phrasal_page(request: Request) -> HTMLResponse:
+async def idioms_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("idioms.html", {"request": request})
 
 

@@ -23,5 +23,42 @@
 
 ### Prerequisites
 
--   Python 3.9+
--   Google Gemini API Key
+-   Python 3.12+
+-   Google Gemini API Key (get it at [Google AI Studio](https://aistudio.google.com/))
+
+### Installation
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/borys25ol/easy-vocab.git
+    cd easy-vocab
+    ```
+
+2.  **Set up a virtual environment**:
+    ```bash
+    python -m venv .ve
+    source .ve/bin/activate
+    ```
+
+3.  **Install dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Configure Environment Variables**:
+    Create a `.env` file or export the variable directly:
+    ```bash
+    export GOOGLE_API_KEY='your_api_key_here'
+    ```
+
+### Running the App
+
+Start the FastAPI server using the provided `Makefile` or directly via `uvicorn`:
+
+```bash
+# Using Makefile
+make runserver
+
+# OR directly
+uvicorn main:app --reload
+```
