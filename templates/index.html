@@ -6,8 +6,9 @@
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <title>English Learner PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/js/shared.js"></script>
     <style>
-        /* Анимация раскрытия */
+        /* Show/Hide animations */
         .details-container {
             max-height: 0;
             overflow: hidden;
@@ -30,7 +31,7 @@
             filter: blur(0);
         }
 
-        /* Поворот стрелки */
+        /* Chevron rotation */
         .chevron {
             transition: transform 0.3s ease;
         }
@@ -39,7 +40,7 @@
             transform: rotate(180deg);
         }
 
-        /* Модалки */
+        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -67,7 +68,7 @@
             }
         }
 
-        /* Спиннер загрузки */
+        /* Loading spinner */
         @keyframes spin {
             to {
                 transform: rotate(360deg);
@@ -83,7 +84,7 @@
             animation: spin 0.8s linear infinite;
         }
 
-        /* Активные состояния фильтров */
+        /* Active filter states */
         .active-cat {
             background: #4f46e5 !important;
             color: white !important;
@@ -91,7 +92,7 @@
             shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
         }
 
-        /* Цветовое кодирование по Уровням (Левая граница) */
+        /* Color coding by Levels (Left border) */
         .lvl-a1 {
             border-left: 8px solid #22c55e !important;
         }
@@ -116,7 +117,7 @@
             border-left: 8px solid #ef4444 !important;
         }
 
-        /* Активные состояния для уровней */
+        /* Active states for level filters */
         .active-lvl[onclick*="A1"] {
             background: #22c55e !important;
             color: white !important;
@@ -291,60 +292,7 @@
     let currentCategory = 'All';
     let currentLevel = 'All';
 
-    // ТВОЯ ЛОГИКА РАНГОВ
-    function getRankConfig(group, type) {
-        const g = group ? group.toLowerCase() : '';
-        const t = type ? type.toLowerCase() : 'word';
-        const styles = {
-            green: {badge: 'bg-green-100 text-green-700 border-green-200'},
-            teal: {badge: 'bg-teal-100 text-teal-700 border-teal-200'},
-            blue: {badge: 'bg-blue-100 text-blue-700 border-blue-200'},
-            indigo: {badge: 'bg-indigo-100 text-indigo-700 border-indigo-200'},
-            purple: {badge: 'bg-purple-100 text-purple-700 border-purple-200'},
-            orange: {badge: 'bg-orange-100 text-orange-700 border-orange-200'}
-        };
-
-        if (t === 'phrase') {
-            if (g.includes('very common')) return styles.green;
-            if (g.includes('common')) return styles.blue;
-            if (g.includes('less common')) return styles.indigo;
-            return styles.orange;
-        } else {
-            if (g.includes('core 500')) return styles.green;
-            if (g.includes('core 1000')) return styles.teal;
-            if (g.includes('core plus')) return styles.blue;
-            if (g.includes('active basic')) return styles.indigo;
-            if (g.includes('fluent') || g.includes('active extended') || g.includes('advanced')) return styles.purple;
-            return styles.orange;
-        }
-    }
-
-    // ЛОГИКА ЦВЕТА ЛЕВОЙ ГРАНИЦЫ (ПО УРОВНЮ)
-    function getLevelBorderClass(level) {
-        const lvl = (level || 'A1').toUpperCase();
-        if (lvl.includes('A1')) return 'lvl-a1';
-        if (lvl.includes('A2')) return 'lvl-a2';
-        if (lvl.includes('B1')) return 'lvl-b1';
-        if (lvl.includes('B2')) return 'lvl-b2';
-        if (lvl.includes('C1')) return 'lvl-c1';
-        if (lvl.includes('C2')) return 'lvl-c2';
-        return 'lvl-a1';
-    }
-
-    function getLevelDotStyle(level) {
-        const lvl = (level || 'A1').toUpperCase();
-        const colors = {
-            'A1': 'text-green-500',
-            'A2': 'text-yellow-500',
-            'B1': 'text-blue-500',
-            'B2': 'text-purple-500',
-            'C1': 'text-orange-500',
-            'C2': 'text-red-500'
-        };
-        const key = Object.keys(colors).find(k => lvl.includes(k)) || 'A1';
-        return colors[key];
-    }
-
+    // LOAD WORDS FROM API
     async function loadWords() {
         const response = await fetch('/words');
         let words = await response.json();
@@ -429,7 +377,7 @@
         });
     }
 
-    // Вспомогательные функции
+    // HELPER FUNCTIONS
     function filterByCategory(cat) {
         currentCategory = cat;
         document.querySelectorAll('.cat-filter').forEach(btn => btn.classList.toggle('active-cat', btn.innerText === cat));
@@ -446,10 +394,6 @@
         currentSort = currentSort === 'date' ? 'rank' : 'date';
         document.getElementById('sortBtn').innerText = currentSort === 'date' ? 'Сортировка: По дате ↓' : 'Сортировка: По Rank ↑';
         loadWords();
-    }
-
-    function toggleDetails(id) {
-        document.getElementById(`card-${id}`).classList.toggle('card-active');
     }
 
     function closeModal(id) {
@@ -490,15 +434,6 @@
             closeModal('deleteModal');
             loadWords();
         }
-    }
-
-    function speak(text) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        const v = window.speechSynthesis.getVoices();
-        u.voice = v.find(v => v.lang.startsWith('en-US')) || v.find(v => v.lang.startsWith('en'));
-        u.rate = 0.9;
-        window.speechSynthesis.speak(u);
     }
 
     document.getElementById('addWordForm').onsubmit = async (e) => {
