@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 import re
-from typing import Optional
+from collections.abc import Generator
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.params import Query
@@ -15,7 +15,7 @@ from starlette.templating import Jinja2Templates
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 PROMPT = """
-You are an English lexicography and corpus linguistics expert. 
+You are an English lexicography and corpus linguistics expert.
 I am learning English words and phrases. Provide usage examples, translations, and linguistic data.
 
 ### REFERENCE EXAMPLES FOR STABILITY:
@@ -27,7 +27,7 @@ I am learning English words and phrases. Provide usage examples, translations, a
 - "Once in a blue moon" (Phrase) → Level: C1, Rank: 12000, Group: Very Rare, Range: 10000+
 
 ### INSTRUCTIONS:
-1. Provide "level" strictly as a single value (A1, A2, B1, B2, C1, or C2). 
+1. Provide "level" strictly as a single value (A1, A2, B1, B2, C1, or C2).
 2. Provide "rank" as a realistic estimated frequency number. Be consistent with the Reference Examples above.
 3. For "synonyms":
    - Return them as a LIST of strings.
@@ -66,27 +66,26 @@ Input: "%s"
 
 sqlite_file_name = "words_app.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
-connect_args = {"check_same_thread": False}
-engine = create_engine(sqlite_url, connect_args=connect_args)
+engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
 
-def create_db_and_tables():
+def create_db_and_tables() -> None:
     SQLModel.metadata.create_all(engine)
 
 
-def get_session():
+def get_session() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
 
 
-class Word(SQLModel, table=True):
+class Word(SQLModel, table=True):  # type: ignore
     __tablename__ = "words"
 
-    id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    id: int | None = Field(default=None, primary_key=True, index=True)
     word: str = Field(nullable=False)
     translation: str = Field(nullable=False)
-    examples: Optional[str] = Field(default=None)
-    synonyms: Optional[str] = Field(default=None)
+    examples: str | None = Field(default=None)
+    synonyms: str | None = Field(default=None)
     rank: int = Field(nullable=False)
     rank_range: str = Field(nullable=False)
     level: str = Field(nullable=False)
@@ -96,7 +95,9 @@ class Word(SQLModel, table=True):
     type: str = Field(nullable=False)
     is_phrasal: bool = Field(default=False)
     is_learned: bool = Field(default=False)
-    created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+    created_at: datetime.datetime = Field(
+        default_factory=datetime.datetime.utcnow
+    )
 
 
 app = FastAPI()
@@ -105,7 +106,7 @@ templates = Jinja2Templates(directory="templates")
 
 
 @app.on_event("startup")
-def on_startup():
+def on_startup() -> None:
     create_db_and_tables()
 
 
@@ -115,7 +116,9 @@ def get_usage_examples(word: str) -> dict:
     word = word.lower()
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash", contents=PROMPT % word, config={"temperature": 0.1}
+        model="gemini-2.5-flash",
+        contents=PROMPT % word,
+        config={"temperature": 0.1},
     )
 
     clean_json = re.sub(
@@ -149,7 +152,9 @@ def get_usage_examples(word: str) -> dict:
         "frequency": int(data.get("frequency", 1)),
         "frequency_group": data.get("frequency_group", "Unknown"),
         "examples": (
-            "\n".join(unique_examples) if unique_examples else "Examples not found"
+            "\n".join(unique_examples)
+            if unique_examples
+            else "Examples not found"
         ),
         "is_phrasal": bool(data.get("is_phrasal", False)),
         "synonyms": synonyms,
@@ -157,41 +162,45 @@ def get_usage_examples(word: str) -> dict:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def home_page(request: Request):
+async def home_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/quiz", response_class=HTMLResponse)
-async def quiz_page(request: Request):
+async def quiz_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("quiz.html", {"request": request})
 
 
 @app.get("/quiz_translate", response_class=HTMLResponse)
-async def quiz_translate_page(request: Request):
-    return templates.TemplateResponse("quiz_translate.html", {"request": request})
+async def quiz_translate_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "quiz_translate.html", {"request": request}
+    )
 
 
 @app.get("/flashcards", response_class=HTMLResponse)
-async def flashcards_page(request: Request):
+async def flashcards_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("flashcards.html", {"request": request})
 
 
 @app.get("/phrasal", response_class=HTMLResponse)
-async def phrasal_page(request: Request):
-    return templates.TemplateResponse("phrasal_verbs.html", {"request": request})
+async def phrasal_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "phrasal_verbs.html", {"request": request}
+    )
 
 
 @app.get("/words", response_model=list[Word])
-def get_words(session: Session = Depends(get_session)):
-    statement = select(Word).order_by(Word.created_at.desc())
+def get_words(session: Session = Depends(get_session)) -> list[Word]:
+    statement = select(Word).order_by(Word.created_at.desc())  # type: ignore
     return session.exec(statement).all()
 
 
 @app.post("/words", response_model=Word)
 def create_word(
-        word_text: str = Query(..., alias="word"),
-        session: Session = Depends(get_session),
-):
+    word_text: str = Query(..., alias="word"),
+    session: Session = Depends(get_session),
+) -> Word:
     word_info = get_usage_examples(word=word_text)
 
     new_word = Word(
@@ -215,7 +224,7 @@ def create_word(
 
 
 @app.get("/words/phrasal_roots")
-def get_phrasal_roots(session: Session = Depends(get_session)):
+def get_phrasal_roots(session: Session = Depends(get_session)) -> list[str]:
     """
     Extracts unique roots ONLY from words marked as is_phrasal.
     """
@@ -232,14 +241,16 @@ def get_phrasal_roots(session: Session = Depends(get_session)):
 
 
 @app.get("/words/phrasal/{root}", response_model=list[Word])
-def get_phrasal_verbs(root: str, session: Session = Depends(get_session)):
+def get_phrasal_verbs(
+    root: str, session: Session = Depends(get_session)
+) -> list[Word]:
     """
     Fetches phrasal verbs by root and strict is_phrasal flag.
     """
     search_pattern = f"{root.lower()} %"
     statement = (
         select(Word)
-        .where(Word.word.like(search_pattern))
+        .where(Word.word.like(search_pattern))  # type: ignore
         .where(Word.is_phrasal == true())
     )
     return session.exec(statement).all()
@@ -247,12 +258,12 @@ def get_phrasal_verbs(root: str, session: Session = Depends(get_session)):
 
 @app.put("/words/{word_id}", response_model=Word)
 def update_word(
-        word_id: int,
-        word: str,
-        translation: str,
-        category: str,
-        session: Session = Depends(get_session),
-):
+    word_id: int,
+    word: str,
+    translation: str,
+    category: str,
+    session: Session = Depends(get_session),
+) -> Word:
     db_word = session.get(Word, word_id)
     if not db_word:
         raise HTTPException(status_code=404, detail="Word not found")
@@ -268,7 +279,7 @@ def update_word(
 
 
 @app.delete("/words/{word_id}")
-def delete_word(word_id: int, session: Session = Depends(get_session)):
+def delete_word(word_id: int, session: Session = Depends(get_session)) -> dict:
     db_word = session.get(Word, word_id)
     if not db_word:
         raise HTTPException(status_code=404, detail="Word not found")
@@ -278,7 +289,9 @@ def delete_word(word_id: int, session: Session = Depends(get_session)):
 
 
 @app.patch("/words/{word_id}/toggle_learned", response_model=Word)
-def toggle_learned(word_id: int, session: Session = Depends(get_session)):
+def toggle_learned(
+    word_id: int, session: Session = Depends(get_session)
+) -> Word:
     db_word = session.get(Word, word_id)
     if not db_word:
         raise HTTPException(status_code=404, detail="Word not found")
