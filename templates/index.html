@@ -1,75 +1,17 @@
 <!DOCTYPE html>
 <html lang="ru">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <title>English Learner PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/cards.css">
     <script src="/static/js/shared.js"></script>
     <script src="/static/js/card-renderer.js"></script>
     <style>
-        /* Show/Hide animations */
-        .details-container {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
-            opacity: 0;
-        }
-
-        .card-active .details-container {
-            max-height: 800px;
-            opacity: 1;
-            margin-top: 1rem;
-        }
-
-        .blur-text {
-            filter: blur(12px);
-            transition: filter 0.3s;
-        }
-
-        .card-active .blur-text {
-            filter: blur(0);
-        }
-
-        /* Chevron rotation */
-        .chevron {
-            transition: transform 0.3s ease;
-        }
-
-        .card-active .chevron {
-            transform: rotate(180deg);
-        }
-
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(4px);
-            align-items: center;
-            justify-content: center;
-            z-index: 50;
-        }
-
-        .modal.active {
-            display: flex;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* Loading spinner */
+        /* Only unique styles for index remain here */
         @keyframes spin {
             to {
                 transform: rotate(360deg);
@@ -85,7 +27,6 @@
             animation: spin 0.8s linear infinite;
         }
 
-        /* Active filter states */
         .active-cat {
             background: #4f46e5 !important;
             color: white !important;
@@ -93,32 +34,6 @@
             shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
         }
 
-        /* Color coding by Levels (Left border) */
-        .lvl-a1 {
-            border-left: 8px solid #22c55e !important;
-        }
-
-        .lvl-a2 {
-            border-left: 8px solid #eab308 !important;
-        }
-
-        .lvl-b1 {
-            border-left: 8px solid #0ea5e9 !important;
-        }
-
-        .lvl-b2 {
-            border-left: 8px solid #a855f7 !important;
-        }
-
-        .lvl-c1 {
-            border-left: 8px solid #f97316 !important;
-        }
-
-        .lvl-c2 {
-            border-left: 8px solid #ef4444 !important;
-        }
-
-        /* Active states for level filters */
         .active-lvl[onclick*="A1"] {
             background: #22c55e !important;
             color: white !important;
@@ -191,9 +106,15 @@
         <a href="/flashcards"
            class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Flash
             Cards</a>
+    </div>
+
+    <div class="flex justify-center items-center px-2 mb-8 mt-8 gap-5 flex-wrap">
         <a href="/phrasal"
            class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Phrasal
             Verbs</a>
+        <a href="/idioms"
+           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Idioms
+        </a>
     </div>
 
     <div id="categoryFilters" class="mt-6 flex flex-wrap justify-center gap-2">

@@ -2,9 +2,8 @@ import datetime
 import json
 import os
 import re
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from contextlib import asynccontextmanager
-from collections.abc import AsyncGenerator
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.params import Query
@@ -49,6 +48,7 @@ I am learning English words and phrases. Provide usage examples, translations, a
     "level": "B2",
     "type": "word | phrase",
     "is_phrasal": true | false,  // Set true only for phrasal verbs like "take off", "get out".
+    "is_idiom": true | false,  // Set true for figurative expressions like "break the ice", "piece of cake".
     "frequency": 1-10,
     "rank": 1234,
     "rank_range": "1001-2000",
@@ -97,6 +97,7 @@ class Word(SQLModel, table=True):  # type: ignore
     category: str = Field(nullable=False)
     type: str = Field(nullable=False)
     is_phrasal: bool = Field(default=False)
+    is_idiom: bool = Field(default=False)
     is_learned: bool = Field(default=False)
     created_at: datetime.datetime = Field(
         default_factory=datetime.datetime.utcnow
@@ -163,6 +164,7 @@ def get_usage_examples(word: str) -> dict:
             else "Examples not found"
         ),
         "is_phrasal": bool(data.get("is_phrasal", False)),
+        "is_idiom": bool(data.get("is_idiom", False)),
         "synonyms": synonyms,
     }
 
@@ -196,6 +198,11 @@ async def phrasal_page(request: Request) -> HTMLResponse:
     )
 
 
+@app.get("/idioms", response_class=HTMLResponse)
+async def phrasal_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("idioms.html", {"request": request})
+
+
 @app.get("/words", response_model=list[Word])
 def get_words(session: Session = Depends(get_session)) -> list[Word]:
     statement = select(Word).order_by(Word.created_at.desc())  # type: ignore
@@ -222,6 +229,7 @@ def create_word(
         frequency=word_info["frequency"],
         frequency_group=word_info["frequency_group"],
         is_phrasal=word_info["is_phrasal"],
+        is_idiom=word_info["is_idiom"],
     )
     session.add(new_word)
     session.commit()
@@ -258,6 +266,19 @@ def get_phrasal_verbs(
         select(Word)
         .where(Word.word.like(search_pattern))  # type: ignore
         .where(Word.is_phrasal == true())
+    )
+    return session.exec(statement).all()
+
+
+@app.get("/words/idioms", response_model=list[Word])
+def get_idioms(session: Session = Depends(get_session)) -> list[Word]:
+    """
+    Fetches all words marked as idioms.
+    """
+    statement = (
+        select(Word)
+        .where(Word.is_idiom == true())
+        .order_by(Word.created_at.desc())  # type: ignore
     )
     return session.exec(statement).all()
 

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idioms Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <script src="/static/js/shared.js"></script>
+    <script src="/static/js/card-renderer.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 text-slate-900 font-sans">
+<div class="max-w-2xl mx-auto">
+    <header class="mb-10">
+        <a href="/"
+           class="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors uppercase tracking-widest">←
+            Back to Cards</a>
+        <h1 class="text-4xl font-black text-slate-800 tracking-tight italic mt-4 underline decoration-indigo-500">
+            IDIOMS</h1>
+        <p class="text-slate-500 text-sm mt-2">Your collection of figurative expressions</p>
+    </header>
+
+    <div id="idiomsList" class="space-y-4">
+    </div>
+</div>
+
+<script>
+    async function loadIdioms() {
+        const response = await fetch('/words/idioms');
+        const words = await response.json();
+        const list = document.getElementById('idiomsList');
+        list.innerHTML = '';
+
+        if (words.length === 0) {
+            list.innerHTML = '<div class="text-center text-slate-400 py-10">No idioms found yet. Add some from the main page!</div>';
+            return;
+        }
+
+        words.forEach(word => {
+            list.insertAdjacentHTML('beforeend', renderWordCard(word));
+        });
+    }
+
+    // Toggle card expansion
+    function toggleDetails(id) {
+        const card = document.getElementById(`card-${id}`);
+        card.classList.toggle('card-active');
+    }
+
+    async function toggleLearned(id) {
+        await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
+        loadIdioms();
+    }
+
+    // Initialize
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    loadIdioms();
+</script>
+</body>
+</html>

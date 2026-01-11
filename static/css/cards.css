@@ -1,0 +1,71 @@
+/* Card Container & Animations */
+.details-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+    opacity: 0;
+}
+
+.card-active .details-container {
+    max-height: 800px;
+    opacity: 1;
+    margin-top: 1rem;
+}
+
+.blur-text {
+    filter: blur(12px);
+    transition: filter 0.3s;
+}
+
+.card-active .blur-text {
+    filter: blur(0);
+}
+
+.chevron {
+    transition: transform 0.3s ease;
+}
+
+.card-active .chevron {
+    transform: rotate(180deg);
+}
+
+/* Level Color Borders */
+.lvl-a1 {
+    border-left: 8px solid #22c55e !important;
+}
+
+.lvl-a2 {
+    border-left: 8px solid #eab308 !important;
+}
+
+.lvl-b1 {
+    border-left: 8px solid #0ea5e9 !important;
+}
+
+.lvl-b2 {
+    border-left: 8px solid #a855f7 !important;
+}
+
+.lvl-c1 {
+    border-left: 8px solid #f97316 !important;
+}
+
+.lvl-c2 {
+    border-left: 8px solid #ef4444 !important;
+}
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.modal.active {
+    display: flex;
+}
