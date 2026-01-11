@@ -3,11 +3,14 @@ import json
 import os
 import re
 from collections.abc import Generator
+from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.params import Query
 from fastapi.staticfiles import StaticFiles
 from google import genai
+from google.genai.types import GenerateContentConfig
 from sqlmodel import Field, Session, SQLModel, create_engine, select, true
 from starlette.responses import HTMLResponse
 from starlette.templating import Jinja2Templates
@@ -100,14 +103,17 @@ class Word(SQLModel, table=True):  # type: ignore
     )
 
 
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
-
-
-@app.on_event("startup")
-def on_startup() -> None:
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
+    # Startup logic: Runs before the app starts receiving requests
     create_db_and_tables()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 
 def get_usage_examples(word: str) -> dict:
@@ -115,10 +121,10 @@ def get_usage_examples(word: str) -> dict:
 
     word = word.lower()
 
+    config = GenerateContentConfig(temperature=0.1)
+
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=PROMPT % word,
-        config={"temperature": 0.1},
+        model="gemini-2.5-flash", contents=PROMPT % word, config=config
     )
 
     clean_json = re.sub(
