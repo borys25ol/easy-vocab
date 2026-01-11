@@ -1,36 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <title>Translate Quiz — English Learner</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/cards.css">
     <style>
-        .rank-common {
-            border-top: 8px solid #4ade80;
-        }
-
-        .rank-elem {
-            border-top: 8px solid #14b8a6;
-        }
-
-        .rank-pre {
-            border-top: 8px solid #3b82f6;
-        }
-
-        .rank-inter {
-            border-top: 8px solid #6366f1;
-        }
-
-        .rank-adv {
-            border-top: 8px solid #a855f7;
-        }
-
-        .rank-rare {
-            border-top: 8px solid #f97316;
-        }
-
         .progress-bar {
             transition: width 0.4s ease;
         }
@@ -46,7 +23,7 @@
     <div class="flex justify-between items-center mb-4 px-2">
         <a href="/"
            class="text-slate-400 hover:text-slate-600 text-xs font-bold transition-colors uppercase tracking-widest">←
-            Выход</a>
+            Back</a>
         <div id="scoreCounter" class="text-indigo-600 font-black text-sm uppercase tracking-widest">Score: 0</div>
     </div>
 
@@ -54,18 +31,16 @@
         <div id="progressBar" class="progress-bar bg-indigo-500 h-full w-0"></div>
     </div>
 
-    <div id="quizCard"
-         class="bg-white rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 p-8 text-center transition-all border-b-4 border-slate-100">
+    <div id="quizCard" class="bg-white rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 p-8 text-center transition-all">
         <div class="mb-6">
             <span id="levelBadge"
-                  class="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-tighter italic">Level A1</span>
+                  class="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-tighter italic">...</span>
         </div>
 
         <p class="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] mb-2">Translate this word:</p>
         <h2 id="questionText" class="text-4xl font-black text-slate-800 mb-10 leading-tight">...</h2>
 
-        <div id="optionsContainer" class="space-y-3">
-        </div>
+        <div id="optionsContainer" class="space-y-3"></div>
 
         <div id="feedback" class="mt-8 min-h-[1.5rem] text-sm font-bold"></div>
     </div>
@@ -88,21 +63,8 @@
     let currentIndex = 0;
     let score = 0;
 
-    function getRankClass(group, type) {
-        const g = group ? group.toLowerCase() : '';
-        const t = type ? type.toLowerCase() : 'word';
-        if (t === 'phrase') {
-            if (g.includes('very common')) return 'rank-common';
-            if (g.includes('common')) return 'rank-pre';
-            return 'rank-inter';
-        } else {
-            if (g.includes('core 500')) return 'rank-common';
-            if (g.includes('core 1000')) return 'rank-elem';
-            if (g.includes('core plus')) return 'rank-pre';
-            if (g.includes('active')) return 'rank-inter';
-            if (g.includes('advanced') || g.includes('academic')) return 'rank-adv';
-            return 'rank-rare';
-        }
+    function getLevelClass(level) {
+        return `lvl-${(level || 'A1').toLowerCase()}`;
     }
 
     async function initQuiz() {
@@ -117,12 +79,7 @@
             return array;
         };
 
-        // Фильтруем выученные (опционально) и сортируем по рангу
-        // allWords = data
-        //     .sort((a, b) => (a.rank || 99999) - (b.rank || 99999))
-        //     .slice(0, 15); // Сессия на 15 слов
-
-        allWords = shuffle(data).slice(0, 20); // Сессия на 20 слов.
+        allWords = shuffle(data.filter(w => !w.is_learned)).slice(0, 20);
 
         if (allWords.length < 4) {
             document.getElementById('questionText').innerText = "Add more words first";
@@ -140,22 +97,21 @@
         const currentWord = allWords[currentIndex];
         const card = document.getElementById('quizCard');
 
-        // Установка стиля карточки по сложности
-        card.className = `bg-white rounded-[2.5rem] shadow-2xl p-8 text-center transition-all ${getRankClass(currentWord.frequency_group, currentWord.type)}`;
+        card.className = `bg-white rounded-[2.5rem] shadow-2xl p-8 text-center transition-all ${getLevelClass(currentWord.level)}`;
 
-        document.getElementById('levelBadge').innerText = `Level ${currentWord.level || 'A1'} • ${currentWord.type}`;
+        let typeLabel = currentWord.type;
+        if (currentWord.is_phrasal) typeLabel = "Phrasal";
+        if (currentWord.is_idiom) typeLabel = "Idiom";
+
+        document.getElementById('levelBadge').innerText = `Level ${currentWord.level || 'A1'} • ${typeLabel}`;
         document.getElementById('questionText').innerText = currentWord.word;
         document.getElementById('feedback').innerText = '';
 
-        // Генерация 4 вариантов перевода
         let options = [currentWord];
         let pool = [...allWords];
-        // Если слов в текущем списке мало, можно добавить из всей базы, но пока берем из сессии
         while (options.length < 4) {
             let randomWord = pool[Math.floor(Math.random() * pool.length)];
-            if (!options.find(o => o.id === randomWord.id)) {
-                options.push(randomWord);
-            }
+            if (!options.find(o => o.id === randomWord.id)) options.push(randomWord);
         }
         options.sort(() => Math.random() - 0.5);
 
@@ -183,7 +139,6 @@
             document.getElementById('feedback').innerHTML = '<span class="text-green-500 font-black uppercase tracking-widest text-xs">Well done!</span>';
         } else {
             btn.classList.add('border-red-500', 'bg-red-50', 'text-red-700');
-            // Подсвечиваем правильный
             btns.forEach(b => {
                 const word = allWords[currentIndex];
                 if (b.innerText === word.translation) b.classList.add('border-green-500', 'text-green-600');
@@ -192,7 +147,6 @@
         }
 
         document.getElementById('scoreCounter').innerText = `Score: ${score}`;
-
         setTimeout(() => {
             currentIndex++;
             showQuestion();

@@ -1,36 +1,13 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <title>Smart Quiz — English Learner</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/cards.css">
     <style>
-        .rank-common {
-            border-top: 6px solid #4ade80;
-        }
-
-        .rank-elem {
-            border-top: 6px solid #14b8a6;
-        }
-
-        .rank-pre {
-            border-top: 6px solid #3b82f6;
-        }
-
-        .rank-inter {
-            border-top: 6px solid #6366f1;
-        }
-
-        .rank-adv {
-            border-top: 6px solid #a855f7;
-        }
-
-        .rank-rare {
-            border-top: 6px solid #f97316;
-        }
-
         .progress-bar {
             transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -40,7 +17,9 @@
 
 <div class="max-w-md w-full">
     <div class="flex justify-between items-center mb-4 px-2">
-        <a href="/" class="text-slate-400 hover:text-slate-600 text-sm font-bold transition-colors">← НАЗАД</a>
+        <a href="/"
+           class="text-slate-400 hover:text-slate-600 text-sm font-bold transition-colors uppercase tracking-widest">←
+            Back</a>
         <div id="scoreCounter" class="text-indigo-600 font-black text-sm uppercase tracking-widest">Score: 0</div>
     </div>
 
@@ -52,10 +31,7 @@
         <div id="categoryLabel" class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">General
         </div>
         <h2 id="questionText" class="text-3xl font-black text-slate-800 mb-8 leading-tight">...</h2>
-
-        <div id="optionsContainer" class="space-y-3">
-        </div>
-
+        <div id="optionsContainer" class="space-y-3"></div>
         <div id="feedback" class="mt-6 min-h-[1.5rem] text-sm font-bold"></div>
     </div>
 
@@ -74,52 +50,24 @@
     let currentIndex = 0;
     let score = 0;
 
-    // Конфиг как в index.html для визуальной связи
-    function getRankClass(group, type) {
-        const g = group ? group.toLowerCase() : '';
-        const t = type ? type.toLowerCase() : 'word';
-        if (t === 'phrase') {
-            if (g.includes('very common')) return 'rank-common';
-            if (g.includes('common')) return 'rank-pre';
-            return 'rank-inter';
-        } else {
-            if (g.includes('core 500')) return 'rank-common';
-            if (g.includes('core 1000')) return 'rank-elem';
-            if (g.includes('core plus')) return 'rank-pre';
-            if (g.includes('active')) return 'rank-inter';
-            if (g.includes('advanced') || g.includes('academic')) return 'rank-adv';
-            return 'rank-rare';
-        }
+    // Synchronized with global level colors
+    function getLevelClass(level) {
+        const l = (level || 'A1').toUpperCase();
+        return `lvl-${l.toLowerCase()}`;
     }
 
     async function initQuiz() {
         const response = await fetch('/words');
         const data = await response.json();
 
-        const shuffle = array => {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        };
-
-        // 1. Приоритезация: Сортируем по рангу (важные первыми)
-        // Ранг 0 (неразмеченные) уходят в конец
-        // allWords = data.sort((a, b) => {
-        //     const rA = a.rank || 99999;
-        //     const rB = b.rank || 99999;
-        //     return rA - rB;
-        // }).slice(0, 20); // Берем топ-20 для одной сессии
-
-        allWords = shuffle(data).slice(0, 40); // Сессия на 20 слов.
-
+        // Filter out learned words for better practice
+        const pool = data.filter(w => !w.is_learned);
+        allWords = pool.sort(() => Math.random() - 0.5).slice(0, 20);
 
         if (allWords.length < 4) {
-            document.getElementById('questionText').innerText = "Нужно минимум 4 слова в базе";
+            document.getElementById('questionText').innerText = "Add more words to start";
             return;
         }
-
         showQuestion();
     }
 
@@ -130,24 +78,19 @@
         }
 
         const currentWord = allWords[currentIndex];
-        // const isReverse = Math.random() > 0.5; // 2. Режим "туда-обратно"
-        const isReverse = true
-
-        // Настройка карточки
         const card = document.getElementById('quizCard');
-        card.className = `bg-white rounded-3xl shadow-xl p-8 text-center transition-all ${getRankClass(currentWord.frequency_group, currentWord.type)}`;
 
-        document.getElementById('categoryLabel').innerText = `${currentWord.frequency_group} | ${currentWord.type}`;
-        document.getElementById('questionText').innerText = isReverse ? currentWord.translation : currentWord.word;
+        // Reset and set level border
+        card.className = `bg-white rounded-3xl shadow-xl p-8 text-center transition-all ${getLevelClass(currentWord.level)}`;
+
+        document.getElementById('categoryLabel').innerText = `${currentWord.level} | ${currentWord.category}`;
+        document.getElementById('questionText').innerText = currentWord.translation;
         document.getElementById('feedback').innerText = '';
 
-        // Подготовка вариантов ответа
         let options = [currentWord];
         while (options.length < 4) {
             let randomWord = allWords[Math.floor(Math.random() * allWords.length)];
-            if (!options.find(o => o.id === randomWord.id)) {
-                options.push(randomWord);
-            }
+            if (!options.find(o => o.id === randomWord.id)) options.push(randomWord);
         }
         options.sort(() => Math.random() - 0.5);
 
@@ -157,10 +100,7 @@
         options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = "w-full p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-700 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left flex justify-between items-center group";
-
-            const label = isReverse ? opt.word : opt.translation;
-            btn.innerHTML = `<span>${label}</span><span class="opacity-0 group-hover:opacity-100 transition-opacity">→</span>`;
-
+            btn.innerHTML = `<span>${opt.word}</span><span class="opacity-0 group-hover:opacity-100 transition-opacity">→</span>`;
             btn.onclick = () => checkAnswer(opt.id === currentWord.id, btn);
             container.appendChild(btn);
         });
@@ -171,7 +111,6 @@
     function checkAnswer(isCorrect, btn) {
         const btns = document.querySelectorAll('#optionsContainer button');
         btns.forEach(b => b.disabled = true);
-
         if (isCorrect) {
             btn.classList.add('border-green-500', 'bg-green-50', 'text-green-700');
             score += 10;
@@ -180,9 +119,7 @@
             btn.classList.add('border-red-500', 'bg-red-50', 'text-red-700');
             document.getElementById('feedback').innerHTML = '<span class="text-red-500">Wrong answer</span>';
         }
-
         document.getElementById('scoreCounter').innerText = `Score: ${score}`;
-
         setTimeout(() => {
             currentIndex++;
             showQuestion();
