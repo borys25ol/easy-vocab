@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -80,7 +79,7 @@
         <div class="mt-6 flex justify-center">
             <button onclick="toggleSort()" id="sortBtn"
                     class="text-xs font-bold bg-white border border-slate-200 px-4 py-2 rounded-full hover:bg-slate-50 transition-all text-slate-600 shadow-sm">
-                Сортировка: По дате ↓
+                Sorting: By Date ↓
             </button>
         </div>
     </header>
@@ -176,7 +175,7 @@
 
 <div id="editModal" class="modal">
     <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md mx-4">
-        <h2 class="text-2xl font-bold mb-6">Редактировать</h2>
+        <h2 class="text-2xl font-bold mb-6">Edit</h2>
         <input type="hidden" id="edit_id">
         <div class="space-y-4">
             <input type="text" id="edit_target"
@@ -201,7 +200,7 @@
         <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
             🗑️
         </div>
-        <h2 class="text-2xl font-bold mb-2">Удалить?</h2>
+        <h2 class="text-2xl font-bold mb-2">Delete?</h2>
         <div class="flex gap-3 mt-6">
             <button onclick="confirmDelete()" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold">Delete
             </button>
@@ -257,7 +256,7 @@
 
     function toggleSort() {
         currentSort = currentSort === 'date' ? 'rank' : 'date';
-        document.getElementById('sortBtn').innerText = currentSort === 'date' ? 'Сортировка: По дате ↓' : 'Сортировка: По Rank ↑';
+        document.getElementById('sortBtn').innerText = currentSort === 'date' ? 'Sorting: By Date ↓' : 'Sorting: By Rank ↑';
         loadWords();
     }
 
