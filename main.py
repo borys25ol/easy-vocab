@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 import re
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator, Sequence
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -17,7 +17,13 @@ from starlette.templating import Jinja2Templates
 
 load_dotenv()
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL")
+
+if not GEMINI_API_KEY or not GEMINI_MODEL:
+    raise RuntimeError(
+        "GEMINI_API_KEY or GEMINI_MODEL not found in environment variables or .env file"
+    )
 
 PROMPT = """
 You are an English lexicography and corpus linguistics expert.
@@ -103,7 +109,7 @@ class Word(SQLModel, table=True):  # type: ignore
     is_idiom: bool = Field(default=False)
     is_learned: bool = Field(default=False)
     created_at: datetime.datetime = Field(
-        default_factory=datetime.datetime.utcnow
+        default_factory=lambda: datetime.datetime.now(datetime.UTC)
     )
 
 
@@ -121,30 +127,52 @@ templates = Jinja2Templates(directory="templates")
 
 
 def get_usage_examples(word: str) -> dict:
-    client = genai.Client(api_key=GOOGLE_API_KEY)
+    """
+    Retrieves usage examples, synonyms, and additional metadata for a given word
+    from an external language model API.
 
-    word = word.lower()
+    This function sends a request to a language model API using a specified
+    prompt format and processes the returned JSON data to extract relevant
+    information about the word's usage, meaning, and synonyms.
+
+    :param word: A string representing the target word to retrieve usage
+        examples and metadata for.
+
+    :return: A dictionary containing usage examples, synonyms, and metadata such
+        as rank, translation, category, and frequency information structured as:
+          - **rank** (*int*): The rank of the word.
+          - **rank_range** (*str*): The word's rank range.
+          - **translation** (*str*): Translation of the word.
+          - **category** (*str*): The category to which the word belongs.
+          - **level** (*str*): Proficiency level of the word (e.g., A1, B2).
+          - **type** (*str*): The grammatical type of the word.
+          - **frequency** (*int*): The frequency of the word's occurrence.
+          - **frequency_group** (*str*): The frequency group classification.
+          - **examples** (*str*): Example sentences or phrases using the word.
+          - **is_phrasal** (*bool*): Indicates if the word is phrasal.
+          - **is_idiom** (*bool*): Indicates if the word represents an idiom.
+          - **synonyms** (*str*): Synonyms for the word or a message if none are
+            found.
+    """
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
     config = GenerateContentConfig(temperature=0.1)
-
     response = client.models.generate_content(
-        model="gemini-2.5-flash", contents=PROMPT % word, config=config
+        model=GEMINI_MODEL, contents=PROMPT % word.lower(), config=config
     )
-
     clean_json = re.sub(
         r"^```json\s*|```$", "", response.text.strip(), flags=re.MULTILINE
     )
     data = json.loads(clean_json)
 
-    examples_list = []
+    examples = []
     for meaning in data.get("meanings", []):
         pos = meaning.get("partOfSpeech", "")
         for definition in meaning.get("definitions", []):
-            ex = definition.get("example")
-            if ex:
-                examples_list.append(f"({pos}) {ex}")
+            if example := definition.get("example"):
+                examples.append(f"({pos}) {example}")
 
-    unique_examples = list(dict.fromkeys(examples_list))
+    unique_examples = list(dict.fromkeys(examples))
 
     synonyms_raw = data.get("synonyms", [])
     if isinstance(synonyms_raw, list) and synonyms_raw:
@@ -206,8 +234,8 @@ async def idioms_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("idioms.html", {"request": request})
 
 
-@app.get("/words", response_model=list[Word])
-def get_words(session: Session = Depends(get_session)) -> list[Word]:
+@app.get("/words", response_model=Sequence[Word])
+def get_words(session: Session = Depends(get_session)) -> Sequence[Word]:
     statement = select(Word).order_by(Word.created_at.desc())  # type: ignore
     return session.exec(statement).all()
 
@@ -257,10 +285,10 @@ def get_phrasal_roots(session: Session = Depends(get_session)) -> list[str]:
     return sorted(list(roots))
 
 
-@app.get("/words/phrasal/{root}", response_model=list[Word])
+@app.get("/words/phrasal/{root}", response_model=Sequence[Word])
 def get_phrasal_verbs(
     root: str, session: Session = Depends(get_session)
-) -> list[Word]:
+) -> Sequence[Word]:
     """
     Fetches phrasal verbs by root and strict is_phrasal flag.
     """
@@ -273,8 +301,8 @@ def get_phrasal_verbs(
     return session.exec(statement).all()
 
 
-@app.get("/words/idioms", response_model=list[Word])
-def get_idioms(session: Session = Depends(get_session)) -> list[Word]:
+@app.get("/words/idioms", response_model=Sequence[Word])
+def get_idioms(session: Session = Depends(get_session)) -> Sequence[Word]:
     """
     Fetches all words marked as idioms.
     """
@@ -294,7 +322,7 @@ def update_word(
     category: str,
     session: Session = Depends(get_session),
 ) -> Word:
-    db_word = session.get(Word, word_id)
+    db_word = session.get(entity=Word, ident=word_id)
     if not db_word:
         raise HTTPException(status_code=404, detail="Word not found")
 
@@ -310,7 +338,7 @@ def update_word(
 
 @app.delete("/words/{word_id}")
 def delete_word(word_id: int, session: Session = Depends(get_session)) -> dict:
-    db_word = session.get(Word, word_id)
+    db_word = session.get(entity=Word, ident=word_id)
     if not db_word:
         raise HTTPException(status_code=404, detail="Word not found")
     session.delete(db_word)
@@ -322,7 +350,7 @@ def delete_word(word_id: int, session: Session = Depends(get_session)) -> dict:
 def toggle_learned(
     word_id: int, session: Session = Depends(get_session)
 ) -> Word:
-    db_word = session.get(Word, word_id)
+    db_word = session.get(entity=Word, ident=word_id)
     if not db_word:
         raise HTTPException(status_code=404, detail="Word not found")
     db_word.is_learned = not db_word.is_learned
