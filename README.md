@@ -62,6 +62,7 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 
 - Python 3.12+
 - Google Gemini API Key (get it at [Google AI Studio](https://aistudio.google.com/))
+- Google Gemini Model name (e.g., `gemini-2.0-flash-lite`)
 
 ### Installation
 
@@ -83,10 +84,11 @@ This approach allowed for rapid iteration while focusing on delivering an excell
    ```
 
 4. **Configure Environment Variables**:
-   Create a `.env` file or export the variable directly:
-   ```bash
-   export GOOGLE_API_KEY='your_api_key_here'
-   ```
+   Create a `.env` file or export the variables directly:
+    ```bash
+    export GEMINI_API_KEY='your_api_key_here'
+    export GEMINI_MODEL='gemini-2.5-flash'
+    ```
 
 ### Running the App
 
