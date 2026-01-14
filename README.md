@@ -71,5 +71,5 @@ Start the FastAPI server using the provided `Makefile` or directly via `uvicorn`
 make runserver
 
 # OR directly
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
