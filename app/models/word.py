@@ -22,3 +22,8 @@ class Word(SQLModel, table=True):
     created_at: datetime.datetime = Field(
         default_factory=lambda: datetime.datetime.now(datetime.UTC)
     )
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Word":
+        data["word"] = data["word"].lower()
+        return cls(**data)
