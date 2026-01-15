@@ -5,6 +5,7 @@ from app.models.word import Word
 from app.services.genai_service import get_usage_examples
 
 MCP_PORT = 6432
+MCP_HOST = "0.0.0.0"
 
 mcp = FastMCP(name="Words Learning Server")
 
@@ -45,4 +46,4 @@ def add_word(word: str) -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="http", port=MCP_PORT)
+    mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)
