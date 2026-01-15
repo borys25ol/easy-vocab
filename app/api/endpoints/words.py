@@ -9,10 +9,12 @@ from app.services.genai_service import get_usage_examples
 
 router = APIRouter()
 
+
 @router.get("", response_model=Sequence[Word])
 def get_words(session: Session = Depends(get_session)) -> Sequence[Word]:
     statement = select(Word).order_by(Word.created_at.desc())
     return session.exec(statement).all()
+
 
 @router.post("", response_model=Word)
 def create_word(
@@ -41,6 +43,7 @@ def create_word(
     session.refresh(new_word)
     return new_word
 
+
 @router.get("/phrasal_roots")
 def get_phrasal_roots(session: Session = Depends(get_session)) -> list[str]:
     """
@@ -57,6 +60,7 @@ def get_phrasal_roots(session: Session = Depends(get_session)) -> list[str]:
 
     return sorted(list(roots))
 
+
 @router.get("/phrasal/{root}", response_model=Sequence[Word])
 def get_phrasal_verbs(
     root: str, session: Session = Depends(get_session)
@@ -72,6 +76,7 @@ def get_phrasal_verbs(
     )
     return session.exec(statement).all()
 
+
 @router.get("/idioms", response_model=Sequence[Word])
 def get_idioms(session: Session = Depends(get_session)) -> Sequence[Word]:
     """
@@ -83,6 +88,7 @@ def get_idioms(session: Session = Depends(get_session)) -> Sequence[Word]:
         .order_by(Word.created_at.desc())
     )
     return session.exec(statement).all()
+
 
 @router.put("/{word_id}", response_model=Word)
 def update_word(
@@ -105,6 +111,7 @@ def update_word(
     session.refresh(db_word)
     return db_word
 
+
 @router.delete("/{word_id}")
 def delete_word(word_id: int, session: Session = Depends(get_session)) -> dict:
     db_word = session.get(entity=Word, ident=word_id)
@@ -113,6 +120,7 @@ def delete_word(word_id: int, session: Session = Depends(get_session)) -> dict:
     session.delete(db_word)
     session.commit()
     return {"message": "Deleted successfully"}
+
 
 @router.patch("/{word_id}/toggle_learned", response_model=Word)
 def toggle_learned(

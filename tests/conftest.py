@@ -1,17 +1,20 @@
-import pytest
 from collections.abc import Generator
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from app.main import app
 from app.core.database import get_session
+from app.main import app
 
 
 @pytest.fixture(name="session")
 def session_fixture() -> Generator[Session, None, None]:
     engine = create_engine(
-        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:

@@ -279,14 +279,3 @@ make docker-prod-up     # Start production services
 make docker-prod-down   # Stop production services
 make docker-prod-logs   # View production logs
 ```
-
-### Health Monitoring
-
-All Docker services include health checks:
-
-| Service | Check | Interval | Timeout | Start Period |
-|----------|--------|----------|-------------|
-| postgres | `pg_isready` | 10s | 5s | - |
-| web | HTTP GET `/` | 30s | 10s | 40s |
-
-Services automatically restart on failure and wait for health checks before starting dependent services.

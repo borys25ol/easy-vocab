@@ -1,5 +1,7 @@
 import datetime
+
 from sqlmodel import Field, SQLModel
+
 
 class Word(SQLModel, table=True):
     __tablename__ = "words"

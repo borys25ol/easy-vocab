@@ -1,7 +1,9 @@
 import json
 import re
+
 from google import genai
 from google.genai.types import GenerateContentConfig
+
 from app.core.config import settings
 
 PROMPT = """
@@ -55,6 +57,7 @@ I am learning English words and phrases. Provide usage examples, translations, a
 Input: "%s"
 """
 
+
 def get_usage_examples(word: str) -> dict:
     """
     Retrieves usage examples, synonyms, and additional metadata for a given word
@@ -64,7 +67,9 @@ def get_usage_examples(word: str) -> dict:
 
     config = GenerateContentConfig(temperature=0.1)
     response = client.models.generate_content(
-        model=settings.GEMINI_MODEL, contents=PROMPT % word.lower(), config=config
+        model=settings.GEMINI_MODEL,
+        contents=PROMPT % word.lower(),
+        config=config,
     )
     clean_json = re.sub(
         r"^```json\s*|```$", "", response.text.strip(), flags=re.MULTILINE

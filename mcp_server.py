@@ -15,10 +15,10 @@ def add_word(word: str) -> dict:
     """
     Add a new word to the learning database.
     Automatically fetches translation, examples, and metadata using AI.
-    
+
     Args:
         word: The word or phrase to add (e.g., "ephemeral", "take off", "break the ice")
-    
+
     Returns:
         Dictionary with the created word details including translation and examples
     """
@@ -30,7 +30,7 @@ def add_word(word: str) -> dict:
             session.add(new_word)
             session.commit()
             session.refresh(new_word)
-            
+
             return {
                 "id": new_word.id,
                 "word": new_word.word,
