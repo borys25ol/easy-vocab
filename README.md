@@ -60,44 +60,90 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 
 ### Prerequisites
 
+#### Local Development
 - Python 3.12+
 - Google Gemini API Key (get it at [Google AI Studio](https://aistudio.google.com/))
-- Google Gemini Model name (e.g., `gemini-2.0-flash-lite`)
+- Google Gemini Model name (e.g., `gemini-2.5-flash`)
+
+#### Docker Deployment
+- Docker 20.10+
+- Docker Compose 2.0+
+- Google Gemini API Key
+- PostgreSQL database (local container or external like Neon.tech)
 
 ### Installation
 
+#### Option 1: Local Development
 1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/borys25ol/easy-vocab.git
-   cd easy-vocab
-   ```
+    ```bash
+    git clone https://github.com/borys25ol/easy-vocab.git
+    cd easy-vocab
+    ```
 
 2. **Set up a virtual environment**:
-   ```bash
-   python -m venv .ve
-   source .ve/bin/activate
-   ```
+    ```bash
+    python -m venv .ve
+    source .ve/bin/activate
+    ```
 
 3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 4. **Configure Environment Variables**:
-   Create a `.env` file or export the variables directly:
-    ```bash
-     export GEMINI_API_KEY='your_api_key_here'
-     export GEMINI_MODEL='gemini-2.5-flash'
-     export POSTGRES_HOST='localhost'
-     export POSTGRES_USER='postgres'
-     export POSTGRES_PASSWORD='your_password'
-     export POSTGRES_DB='app'
-     export POSTGRES_PORT='5432'
-     ```
+    Create a `.env` file or export the variables directly:
+     ```bash
+      export GEMINI_API_KEY='your_api_key_here'
+      export GEMINI_MODEL='gemini-2.5-flash'
+      export POSTGRES_HOST='localhost'
+      export POSTGRES_USER='postgres'
+      export POSTGRES_PASSWORD='your_password'
+      export POSTGRES_DB='app'
+      export POSTGRES_PORT='5432'
+      ```
 
-### Running the App
+#### Option 2: Docker Deployment
 
-Start the FastAPI server using the provided `Makefile` or directly via `uvicorn`:
+**Local Development (Dockerized PostgreSQL):**
+```bash
+# Clone the repository
+git clone https://github.com/borys25ol/easy-vocab.git
+cd easy-vocab
+
+# Copy environment template
+cp .env.example .env
+
+# Update .env.production with your credentials
+nano .env
+
+# Start all services (web, mcp, postgres)
+make docker-up
+
+# Or run in background
+make docker-up-d
+```
+
+**Production (External PostgreSQL):**
+```bash
+# Clone the repository
+git clone https://github.com/borys25ol/easy-vocab.git
+cd easy-vocab
+
+# Copy environment template
+cp .env.example .env.production
+
+# Update .env.production with your credentials
+nano .env.production
+
+# Start production services
+make docker-prod-up
+```
+
+### Running App
+
+#### Local Development
+Start the FastAPI server using the provided `Makefile`:
 
 ```bash
 # Using Makefile
@@ -106,6 +152,33 @@ make runserver
 # OR directly
 uvicorn app.main:app --reload
 ```
+
+#### Docker Deployment
+
+**Local Development:**
+```bash
+# Start all services
+make docker-up
+
+# View logs
+make docker-logs
+
+# Stop services
+make docker-down
+```
+
+**Production:**
+```bash
+# Start production services
+make docker-prod-up
+
+# View logs
+make docker-prod-logs
+
+# Stop services
+make docker-prod-down
+```
+
 
 ## 🤖 MCP Server Integration
 
@@ -122,7 +195,7 @@ This project includes an **MCP (Model Context Protocol) server** that allows AI 
 MCP requires the `fastmcp` package (already in `requirements.txt`):
 
 ```bash
-pip install fastmcp==2.2.10
+pip install fastmcp
 ```
 
 ### Running the MCP Server
@@ -142,3 +215,78 @@ The server will start on `http://localhost:6432`
 ## 🧪 Testing
 
 Tests use an in-memory SQLite database for fast, isolated testing. No PostgreSQL database is required for running the test suite.
+
+## 🐳 Docker Architecture
+
+### Multi-Stage Build
+
+EasyVocab uses a **multi-stage Docker build** for optimal image size and security:
+
+**Stage 1: Builder**
+- Base: `python:3.12-slim`
+- Installs build dependencies (gcc, libpq-dev)
+- Creates virtual environment at `/opt/venv`
+- Installs Python packages from `requirements.txt`
+
+**Stage 2: Runtime**
+- Base: `python:3.12-slim`
+- Creates non-root user (`appuser:1000`)
+- Installs runtime dependencies (postgresql-client, curl)
+- Copies Python packages from builder stage
+- Copies application code with proper ownership
+- Runs as non-root user
+
+**Benefits:**
+- ~30% smaller image size (no build tools in runtime)
+- Enhanced security (non-root user)
+- Faster deployments (smaller images)
+- Healthchecks integrated for all services
+
+### Services
+
+#### Local Development
+- **web**: FastAPI application (port 5000)
+- **mcp**: MCP server (port 6432)
+- **postgres**: PostgreSQL 16 database (port 5432)
+- **Network**: Bridge network (`easyvocab-network`)
+- **Volume**: Named volume for PostgreSQL data persistence
+
+#### Production
+- **web**: FastAPI application (port 5000)
+- **mcp**: MCP server (port 6432)
+- **Database**: External PostgreSQL (e.g., Neon.tech)
+- **Network**: Bridge network (`easyvocab-network`)
+- **Logging**: JSON driver with rotation (10MB max, 3 files)
+- **Resources**: CPU and memory limits configured
+
+### Environment Files
+
+- **`.env`** - Local development (contains your credentials)
+- **`.env.production`** - Production configuration (NEVER commit to Git)
+
+### Makefile Commands
+
+```bash
+# Local Development
+make docker-build      # Build Docker images
+make docker-up         # Start services
+make docker-down       # Stop services
+make docker-logs       # View logs
+
+# Production
+make docker-prod-build  # Build production Docker images
+make docker-prod-up     # Start production services
+make docker-prod-down   # Stop production services
+make docker-prod-logs   # View production logs
+```
+
+### Health Monitoring
+
+All Docker services include health checks:
+
+| Service | Check | Interval | Timeout | Start Period |
+|----------|--------|----------|-------------|
+| postgres | `pg_isready` | 10s | 5s | - |
+| web | HTTP GET `/` | 30s | 10s | 40s |
+
+Services automatically restart on failure and wait for health checks before starting dependent services.

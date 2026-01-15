@@ -1,0 +1,56 @@
+services:
+  web:
+    build: .
+    container_name: easyvocab-web
+    user: "1000:1000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 5000
+    env_file:
+      - .env.production
+    ports:
+      - "5000:5000"
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - easyvocab-network
+
+  mcp:
+    build: .
+    container_name: easyvocab-mcp
+    user: "1000:1000"
+    command: python mcp_server.py
+    env_file:
+      - .env.production
+    ports:
+      - "6432:6432"
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - easyvocab-network
+
+networks:
+  easyvocab-network:
+    driver: bridge

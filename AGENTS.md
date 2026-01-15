@@ -25,7 +25,11 @@ easy-words-learning/
 ├── templates/           # Jinja2 HTML templates
 ├── static/              # CSS, JS, assets
 ├── mcp_server.py        # MCP server (FastMCP)
-└── tests/               # Pytest test suite
+├── tests/               # Pytest test suite
+├── Dockerfile            # Multi-stage Docker image (builder + runtime)
+├── docker-compose.yml    # Local development with PostgreSQL
+├── docker-compose.prod.yml  # Production with external PostgreSQL
+└── .dockerignore        # Build optimizations
 ```
 
 **Components:**
@@ -33,6 +37,9 @@ easy-words-learning/
 - **Service Layer**: `genai_service.py` handles AI word enrichment
 - **Data Layer**: PostgreSQL with SQLModel ORM
 - **Frontend**: Server-side rendering with Jinja2
+- **Docker**: Multi-stage build with non-root user (appuser:1000)
+- **Networks**: Bridge network for service isolation
+- **Healthchecks**: Integrated health checks for all services
 
 ---
 
@@ -63,8 +70,15 @@ easy-words-learning/
 ## 🔧 Development Workflow
 
 ### Setup
+
+#### Local Development
 ```bash
 make ve           # Create venv and install dependencies
+```
+
+#### Docker Development
+```bash
+docker-compose up  # Start all services (web, mcp, postgres)
 ```
 
 ### Running the App
@@ -73,14 +87,42 @@ make runserver    # FastAPI on http://0.0.0.0:5000
 python mcp_server.py  # MCP server on http://localhost:6432
 ```
 
+### Docker Deployment
+
+#### Local Development
+```bash
+make docker-up    # Start services in foreground
+make docker-up-d  # Start in background
+make docker-logs  # View logs
+make docker-down  # Stop and remove containers
+```
+
+#### Production
+```bash
+make docker-prod-build   # Build production Docker images
+make docker-prod-up      # Start production services (external PostgreSQL)
+make docker-prod-down    # Stop production services
+make docker-prod-logs    # View production logs
+```
+
 ### Common Commands
 ```bash
+# Code Quality
 make style        # Check style without formatting
 make format       # Format with black
 make lint         # Run linting checks
 make types        # Run mypy type checking
 make test         # Run pytest
 make run_hooks    # Run pre-commit hooks on all files
+
+# Docker
+make docker-build      # Build Docker images
+make docker-up        # Start local services
+make docker-down      # Stop local services
+make docker-logs      # View local logs
+make docker-prod-up   # Start production services
+make docker-prod-down # Stop production services
+make docker-prod-logs # View production logs
 ```
 
 ---
@@ -177,6 +219,34 @@ Uses `pydantic-settings.BaseSettings` in `app/core/config.py`:
 - `DATABASE_URL` computed property for PostgreSQL connection
 - Singleton `settings` instance exported
 
+### Docker Configuration
+
+#### Local Development
+- Uses dockerized PostgreSQL (postgres:16-alpine)
+- Environment loaded from `.env` file
+- Services connect via bridge network (`easyvocab-network`)
+- PostgreSQL service uses default credentials (app/postgres/postgres)
+- Override `POSTGRES_HOST=postgres` for web/mcp services
+
+#### Production
+- Uses external PostgreSQL (e.g., Neon.tech)
+- Environment loaded from `.env.production` file
+- No PostgreSQL container (external database)
+- Resource limits: web (1 CPU, 512MB), mcp (0.5 CPU, 256MB)
+- Logging: JSON driver with rotation (10MB max, 3 files)
+
+#### Docker Environment Files
+- `.env` - Local development (contains Neon credentials)
+- `.env.production` - Production configuration (NEVER commit)
+
+### Healthchecks
+
+All Docker services include health checks:
+- **PostgreSQL**: `pg_isready` (10s interval, 5s timeout, 5 retries)
+- **Web**: HTTP GET `/` (30s interval, 10s timeout, 3 retries, 40s start period)
+
+Services with `depends_on` wait for health checks before starting.
+
 ---
 
 ## 🎯 Development Guidelines
@@ -191,6 +261,39 @@ Uses `pydantic-settings.BaseSettings` in `app/core/config.py`:
 ### Database Changes
 - Modify `app/models/*.py` SQLModel classes
 - Run `make runserver` - tables auto-created on startup via SQLModel
+- Docker: `docker-compose up` - tables auto-created on startup
+
+### Docker Development
+
+#### Building Images
+```bash
+docker-compose build              # Rebuild local images
+docker-compose build --no-cache   # Clean rebuild
+```
+
+#### Managing Containers
+```bash
+docker-compose ps          # List running containers
+docker-compose top         # Show processes
+docker-compose logs web    # View web service logs
+docker-compose exec web bash  # Access container shell
+```
+
+#### Troubleshooting
+```bash
+# View container logs
+docker-compose logs -f web
+docker-compose logs -f mcp
+
+# Restart services
+docker-compose restart web
+
+# Remove all containers and volumes
+docker-compose down -v
+
+# Check health status
+docker inspect easyvocab-web | grep -A 10 Health
+```
 
 ### Frontend Updates
 - Edit HTML in `templates/`

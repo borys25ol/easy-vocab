@@ -1,5 +1,6 @@
-# Секреты
+# Секрети
 .env
+.env.production
 GOOGLE_API_KEY
 
 # База данных
