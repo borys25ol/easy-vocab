@@ -51,7 +51,7 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python, FastAPI, SQLModel (SQLite).
+- **Backend**: Python, FastAPI, SQLModel (PostgreSQL).
 - **AI Engine**: Google Gemini Pro (via `google-genai` SDK).
 - **Frontend**: Tailwind CSS, Vanilla JavaScript.
 - **Templating**: Jinja2.
@@ -86,9 +86,14 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 4. **Configure Environment Variables**:
    Create a `.env` file or export the variables directly:
     ```bash
-    export GEMINI_API_KEY='your_api_key_here'
-    export GEMINI_MODEL='gemini-2.5-flash'
-    ```
+     export GEMINI_API_KEY='your_api_key_here'
+     export GEMINI_MODEL='gemini-2.5-flash'
+     export POSTGRES_HOST='localhost'
+     export POSTGRES_USER='postgres'
+     export POSTGRES_PASSWORD='your_password'
+     export POSTGRES_DB='app'
+     export POSTGRES_PORT='5432'
+     ```
 
 ### Running the App
 
@@ -133,3 +138,7 @@ The server will start on `http://localhost:6432`
 | Tool | Description |
 |------|-------------|
 | `add_word(word: str)` | Add a new word with auto-generated translations, examples, and metadata |
+
+## 🧪 Testing
+
+Tests use an in-memory SQLite database for fast, isolated testing. No PostgreSQL database is required for running the test suite.

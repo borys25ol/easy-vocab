@@ -5,7 +5,7 @@
 EasyVocab is an AI-powered English vocabulary builder using Google Gemini AI. It automatically enriches words with Ukrainian translations, usage examples, CEFR levels, and frequency rankings.
 
 **Tech Stack:**
-- Backend: Python 3.12+, FastAPI, SQLModel (SQLite)
+- Backend: Python 3.12+, FastAPI, SQLModel (PostgreSQL)
 - AI: Google Gemini via `google-genai` SDK
 - Frontend: Jinja2, Tailwind CSS, Vanilla JavaScript
 - MCP: FastMCP (HTTP transport on port 6432)
@@ -31,7 +31,7 @@ easy-words-learning/
 **Components:**
 - **API Layer**: REST endpoints for words CRUD and HTML pages
 - **Service Layer**: `genai_service.py` handles AI word enrichment
-- **Data Layer**: SQLite with SQLModel ORM
+- **Data Layer**: PostgreSQL with SQLModel ORM
 - **Frontend**: Server-side rendering with Jinja2
 
 ---
@@ -105,6 +105,8 @@ make test         # Run all tests
 pytest           # Direct pytest command
 ```
 
+> **Note**: Tests use SQLite in-memory database for fast, isolated testing.
+
 ---
 
 ## 📡 API Documentation
@@ -162,13 +164,17 @@ Required in `.env` file:
 ```bash
 GEMINI_API_KEY=your_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
-SQLITE_FILE_NAME=words_app.db  # Optional, default provided
+POSTGRES_HOST=localhost
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=app
+POSTGRES_PORT=5432
 ```
 
 ### Settings Pattern
 Uses `pydantic-settings.BaseSettings` in `app/core/config.py`:
 - Auto-loads from `.env` file
-- `DATABASE_URL` computed property for SQLite connection
+- `DATABASE_URL` computed property for PostgreSQL connection
 - Singleton `settings` instance exported
 
 ---
@@ -184,8 +190,7 @@ Uses `pydantic-settings.BaseSettings` in `app/core/config.py`:
 
 ### Database Changes
 - Modify `app/models/*.py` SQLModel classes
-- Run `make runserver` - tables auto-created on startup
-- SQLite file: `words_app.db` (project root)
+- Run `make runserver` - tables auto-created on startup via SQLModel
 
 ### Frontend Updates
 - Edit HTML in `templates/`
