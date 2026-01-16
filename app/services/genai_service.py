@@ -55,6 +55,9 @@ I am learning English words and phrases. Provide usage examples, translations, a
 
 USER_TEMPLATE = "Input: %s"
 
+TEMPERATURE = 0.1
+MAX_TOKENS = 4000
+
 
 def get_usage_examples(word: str) -> dict:
     """
@@ -72,9 +75,9 @@ def get_usage_examples(word: str) -> dict:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": USER_TEMPLATE % word.lower()},
         ],
-        temperature=0.1,
+        temperature=TEMPERATURE,
+        max_tokens=MAX_TOKENS,
     )
-
     content = response.choices[0].message.content
     clean_json = re.sub(
         r"^```json\s*|```$", "", content.strip(), flags=re.MULTILINE
