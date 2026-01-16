@@ -4,7 +4,17 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
+
+engine = create_engine(
+    url=settings.DATABASE_URL,
+    pool_pre_ping=True,
+    connect_args={
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    },
+)
 
 
 def create_db_and_tables() -> None:
