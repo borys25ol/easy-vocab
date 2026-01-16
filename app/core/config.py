@@ -2,8 +2,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    GEMINI_API_KEY: str = "unknown"
-    GEMINI_MODEL: str = "unknown"
+    OPENROUTER_API_KEY: str = "unknown"
+    OPENROUTER_MODEL: str = "google/gemini-2.5-flash"
+    OPENROUTER_SITE_URL: str = ""
+    OPENROUTER_APP_TITLE: str = "EasyVocab"
 
     POSTGRES_HOST: str = "localhost"
     POSTGRES_USER: str = "postgres"

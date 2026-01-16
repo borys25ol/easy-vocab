@@ -1,13 +1,11 @@
 import json
 import re
 
-from google import genai
-from google.genai.types import GenerateContentConfig
+from openai import OpenAI
 
 from app.core.config import settings
 
-PROMPT = """
-You are an English lexicography and corpus linguistics expert.
+SYSTEM_PROMPT = """You are an English lexicography and corpus linguistics expert.
 I am learning English words and phrases. Provide usage examples, translations, and linguistic data.
 
 ### REFERENCE EXAMPLES FOR STABILITY:
@@ -37,8 +35,8 @@ I am learning English words and phrases. Provide usage examples, translations, a
     "word": "",
     "level": "B2",
     "type": "word | phrase",
-    "is_phrasal": true | false,  // Set true only for phrasal verbs like "take off", "get out".
-    "is_idiom": true | false,  // Set true for figurative expressions like "break the ice", "piece of cake".
+    "is_phrasal": true | false,
+    "is_idiom": true | false,
     "frequency": 1-10,
     "rank": 1234,
     "rank_range": "1001-2000",
@@ -53,26 +51,33 @@ I am learning English words and phrases. Provide usage examples, translations, a
         }
     ]
 }
-
-Input: "%s"
 """
+
+USER_TEMPLATE = "Input: %s"
 
 
 def get_usage_examples(word: str) -> dict:
     """
     Retrieves usage examples, synonyms, and additional metadata for a given word
-    from an external language model API.
+    from an external language model API via OpenRouter.
     """
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
-
-    config = GenerateContentConfig(temperature=0.1)
-    response = client.models.generate_content(
-        model=settings.GEMINI_MODEL,
-        contents=PROMPT % word.lower(),
-        config=config,
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=settings.OPENROUTER_API_KEY,
     )
+
+    response = client.chat.completions.create(
+        model=settings.OPENROUTER_MODEL,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": USER_TEMPLATE % word.lower()},
+        ],
+        temperature=0.1,
+    )
+
+    content = response.choices[0].message.content
     clean_json = re.sub(
-        r"^```json\s*|```$", "", response.text.strip(), flags=re.MULTILINE
+        r"^```json\s*|```$", "", content.strip(), flags=re.MULTILINE
     )
     data = json.loads(clean_json)
 
