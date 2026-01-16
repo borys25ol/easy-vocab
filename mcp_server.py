@@ -38,8 +38,11 @@ def add_word(word: str) -> dict:
                 "translation": new_word.translation,
                 "level": new_word.level,
                 "category": new_word.category,
+                "type": new_word.type,
                 "examples": new_word.examples,
                 "synonyms": new_word.synonyms,
+                "is_phrasal": new_word.is_phrasal,
+                "is_idiom": new_word.is_idiom,
                 "is_learned": new_word.is_learned,
             }
     except Exception as e:
