@@ -31,7 +31,6 @@ venv/
 
 # Documentation
 *.md
-assets/
 screenshots/
 
 # Development files

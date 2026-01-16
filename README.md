@@ -35,7 +35,7 @@ EasyVocab is a smart learning companion designed to streamline vocabulary acquis
 
 | Main Dashboard | Phrasal Verbs Explorer | Word Card Details | Flashcard Mode |
 |:---:|:---:|:---:|:---:|
-| <img src="assets/main.png" width="300"> | <img src="assets/phrasal.png" width="300"> | <img src="assets/card.png" width="300"> | <img src="assets/flashcard.png" width="300"> |
+| <img src=".github/assets/main.png" width="300"> | <img src=".github/assets/phrasal.png" width="300"> | <img src=".github/assets/card.png" width="300"> | <img src=".github/assets/flashcard.png" width="300"> |
 | View all your words in a clean, organized list with progress tracking. | Explore phrasal verbs grouped by root verbs (get, take, look, go) with contextual examples. | See detailed information for each word including translations, examples, and synonyms. | Test your knowledge with interactive flashcards in both UA→EN and EN→UA modes. |
 
 ## 🚀 Development Approach
