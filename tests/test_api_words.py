@@ -3,13 +3,13 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 
-def test_read_words_empty(client: TestClient):
+def test_read_words_empty(client: TestClient) -> None:
     response = client.get("/words/")
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_create_word(client: TestClient):
+def test_create_word(client: TestClient) -> None:
     mock_data = {
         "rank": 100,
         "rank_range": "1-500",
@@ -38,7 +38,7 @@ def test_create_word(client: TestClient):
     assert data["id"] is not None
 
 
-def test_create_and_read_word(client: TestClient):
+def test_create_and_read_word(client: TestClient) -> None:
     mock_data = {
         "rank": 100,
         "rank_range": "1-500",
