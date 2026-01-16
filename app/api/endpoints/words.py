@@ -7,12 +7,13 @@ from app.core.database import get_session
 from app.models.word import Word
 from app.services.genai_service import get_usage_examples
 
+
 router = APIRouter()
 
 
 @router.get("", response_model=Sequence[Word])
 def get_words(session: Session = Depends(get_session)) -> Sequence[Word]:
-    statement = select(Word).order_by(Word.created_at.desc())
+    statement = select(Word).order_by(Word.created_at.desc())  # type: ignore
     return session.exec(statement).all()
 
 
@@ -58,7 +59,7 @@ def get_phrasal_roots(session: Session = Depends(get_session)) -> list[str]:
         if parts:
             roots.add(parts[0].strip().capitalize())
 
-    return sorted(list(roots))
+    return sorted(roots)
 
 
 @router.get("/phrasal/{root}", response_model=Sequence[Word])
@@ -71,7 +72,7 @@ def get_phrasal_verbs(
     search_pattern = f"{root.lower()} %"
     statement = (
         select(Word)
-        .where(Word.word.like(search_pattern))
+        .where(Word.word.like(search_pattern))  # type: ignore
         .where(Word.is_phrasal == true())
     )
     return session.exec(statement).all()
@@ -83,9 +84,7 @@ def get_idioms(session: Session = Depends(get_session)) -> Sequence[Word]:
     Fetches all words marked as idioms.
     """
     statement = (
-        select(Word)
-        .where(Word.is_idiom == true())
-        .order_by(Word.created_at.desc())
+        select(Word).where(Word.is_idiom == true()).order_by(Word.created_at.desc())  # type: ignore
     )
     return session.exec(statement).all()
 
@@ -123,9 +122,7 @@ def delete_word(word_id: int, session: Session = Depends(get_session)) -> dict:
 
 
 @router.patch("/{word_id}/toggle_learned", response_model=Word)
-def toggle_learned(
-    word_id: int, session: Session = Depends(get_session)
-) -> Word:
+def toggle_learned(word_id: int, session: Session = Depends(get_session)) -> Word:
     db_word = session.get(entity=Word, ident=word_id)
     if not db_word:
         raise HTTPException(status_code=404, detail="Word not found")

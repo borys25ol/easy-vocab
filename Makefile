@@ -12,19 +12,17 @@ runserver:
 run_hooks:
 	pre-commit run --all-files
 
-style:
-	flake8 app tests && isort app tests --diff && black app tests --check
+lint:
+	ruff check .
 
-types:
-	mypy --config-file setup.cfg .
+lint_fix:
+	ruff check --fix .
 
 format:
-	black app tests
+	ruff format .
 
-lint:
-	flake8 app tests
-	isort app tests --diff
-	black app tests --check
+types:
+	mypy .
 
 test:
 	pytest

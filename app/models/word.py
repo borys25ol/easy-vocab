@@ -3,7 +3,7 @@ import datetime
 from sqlmodel import Field, SQLModel
 
 
-class Word(SQLModel, table=True):
+class Word(SQLModel, table=True):  # type: ignore
     __tablename__ = "words"
 
     id: int | None = Field(default=None, primary_key=True, index=True)

@@ -26,9 +26,7 @@ def test_create_word(client: TestClient) -> None:
     }
 
     # Patch where it is imported in the endpoint module
-    with patch(
-        "app.api.endpoints.words.get_usage_examples", return_value=mock_data
-    ):
+    with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
         response = client.post("/words/", params={"word": "TestWord"})
 
     assert response.status_code == 200
@@ -54,9 +52,7 @@ def test_create_and_read_word(client: TestClient) -> None:
         "synonyms": "test1, test2",
     }
 
-    with patch(
-        "app.api.endpoints.words.get_usage_examples", return_value=mock_data
-    ):
+    with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
         client.post("/words/", params={"word": "TestWord"})
 
     response = client.get("/words/")

@@ -5,6 +5,7 @@ from openai import OpenAI
 
 from app.core.config import settings
 
+
 SYSTEM_PROMPT = """You are an English lexicography and corpus linguistics expert.
 I am learning English words and phrases. Provide usage examples, translations, and linguistic data.
 
@@ -79,9 +80,7 @@ def get_usage_examples(word: str) -> dict:
         max_tokens=MAX_TOKENS,
     )
     content = response.choices[0].message.content
-    clean_json = re.sub(
-        r"^```json\s*|```$", "", content.strip(), flags=re.MULTILINE
-    )
+    clean_json = re.sub(r"^```json\s*|```$", "", content.strip(), flags=re.MULTILINE)
     data = json.loads(clean_json)
 
     examples = []
@@ -109,9 +108,7 @@ def get_usage_examples(word: str) -> dict:
         "frequency": int(data.get("frequency", 1)),
         "frequency_group": data.get("frequency_group", "Unknown"),
         "examples": (
-            "\n".join(unique_examples)
-            if unique_examples
-            else "Examples not found"
+            "\n".join(unique_examples) if unique_examples else "Examples not found"
         ),
         "is_phrasal": bool(data.get("is_phrasal", False)),
         "is_idiom": bool(data.get("is_idiom", False)),

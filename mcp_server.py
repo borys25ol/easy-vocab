@@ -4,6 +4,7 @@ from app.core.database import get_session
 from app.models.word import Word
 from app.services.genai_service import get_usage_examples
 
+
 MCP_PORT = 6432
 MCP_HOST = "0.0.0.0"
 

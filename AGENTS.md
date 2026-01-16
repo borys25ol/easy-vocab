@@ -46,24 +46,21 @@ easy-words-learning/
 ## 🎨 Code Style Guide
 
 ### Python Style
-- Line length: 79 characters (Black)
+- Line length: 79 characters (Ruff)
 - Type hints: Required for function signatures
-- Docstrings: NOT forced (DXXX errors disabled)
+- Docstrings: NOT forced (DXXX rules disabled)
 - Quotes: Single quotes preferred
 - F-strings: Allowed and encouraged
-- Imports: Auto-sorted with isort
+- Imports: Auto-sorted with Ruff
 
 ### Pre-commit Hooks
-- **black**: Code formatting
-- **isort**: Import sorting
-- **flake8**: Linting (complexity, quality)
+- **ruff**: Linting, formatting, import sorting (replaces Black, isort, flake8, pyupgrade)
 - **mypy**: Type checking
-- **pyupgrade**: Python 3.12+ syntax
 
 ### Code Quality Settings
-- Max complexity: 15 (flake8)
+- Max complexity: 15 (Ruff)
 - Python version: 3.12
-- Many flake8 rules disabled for flexibility
+- Many Ruff rules disabled for flexibility
 
 ---
 
@@ -109,8 +106,8 @@ make docker-prod-logs    # View production logs
 ```bash
 # Code Quality
 make style        # Check style without formatting
-make format       # Format with black
-make lint         # Run linting checks
+make format       # Format with ruff
+make lint         # Run linting and fix issues
 make types        # Run mypy type checking
 make test         # Run pytest
 make run_hooks    # Run pre-commit hooks on all files

@@ -1,0 +1,57 @@
+# Exclude a variety of commonly ignored directories.
+target-version = "py312"
+
+exclude = [
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".tox",
+    ".ve",
+    "_build",
+    "build",
+    "dist",
+    "venv",
+    "__pycache__",
+    "logs",
+    "__init__.py",
+    ".ruff_cache",
+]
+
+[lint]
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+
+ignore = [
+    "F401", "F403", "F405",
+    "E501",
+    "E741",
+    "F821", "F901",
+    "W291",
+    "S101", "S104", "S105", "S303", "S106", # Bandit
+    "N805",
+    "B008",
+    "COM812",
+    "E203",
+    "A003",
+    "N818",
+]
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.isort]
+lines-after-imports = 2
+split-on-trailing-comma = false
+
+[lint.per-file-ignores]
+"app/services/genai_service.py" = [
+    "E501",    # E501 - Line too long.
+]
