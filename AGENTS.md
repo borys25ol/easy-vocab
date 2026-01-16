@@ -2,11 +2,11 @@
 
 ## 📋 Project Overview
 
-EasyVocab is an AI-powered English vocabulary builder using Google Gemini AI. It automatically enriches words with Ukrainian translations, usage examples, CEFR levels, and frequency rankings.
+EasyVocab is an AI-powered English vocabulary builder using OpenRouter AI gateway (Google Gemini models). It automatically enriches words with Ukrainian translations, usage examples, CEFR levels, and frequency rankings.
 
 **Tech Stack:**
 - Backend: Python 3.12+, FastAPI, SQLModel (PostgreSQL)
-- AI: Google Gemini via `google-genai` SDK
+- AI: OpenRouter (Google Gemini via OpenAI SDK)
 - Frontend: Jinja2, Tailwind CSS, Vanilla JavaScript
 - MCP: FastMCP (HTTP transport on port 6432)
 
@@ -204,8 +204,8 @@ Returns: Word details including id, word, translation, level, category, examples
 ### Environment Variables
 Required in `.env` file:
 ```bash
-GEMINI_API_KEY=your_api_key_here
-GEMINI_MODEL=gemini-2.5-flash
+OPENROUTER_API_KEY=your_api_key_here
+OPENROUTER_MODEL=google/gemini-2.5-flash
 POSTGRES_HOST=localhost
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password

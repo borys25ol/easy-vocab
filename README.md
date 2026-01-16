@@ -4,7 +4,7 @@
 
 ## What is EasyVocab?
 
-EasyVocab is a smart learning companion designed to streamline vocabulary acquisition. By leveraging **Google Gemini AI**, it automatically enriches every word you add with Ukrainian translations, real-life usage examples, CEFR level classifications, and frequency rankings. Whether you're learning everyday vocabulary, phrasal verbs, or idioms, EasyVocab helps you track progress and master English at your own pace.
+EasyVocab is a smart learning companion designed to streamline vocabulary acquisition. By leveraging **OpenRouter AI gateway (Google Gemini models)**, it automatically enriches every word you add with Ukrainian translations, real-life usage examples, CEFR level classifications, and frequency rankings. Whether you're learning everyday vocabulary, phrasal verbs, or idioms, EasyVocab helps you track progress and master English at your own pace.
 
 ## ✨ Key Features
 
@@ -12,7 +12,7 @@ EasyVocab is a smart learning companion designed to streamline vocabulary acquis
 - **Auto-generated translations**: Get instant Ukrainian translations for every word
 - **Contextual examples**: Learn through real-life usage scenarios
 - **Synonym suggestions**: Expand your vocabulary with related words
-- **AI-powered**: All metadata generated automatically using Google Gemini
+- **AI-powered**: All metadata generated automatically using OpenRouter
 
 ### 📊 Progress Tracking
 - **CEFR leveling**: Words categorized from A1 (beginner) to C2 (advanced)
@@ -40,7 +40,7 @@ EasyVocab is a smart learning companion designed to streamline vocabulary acquis
 
 ## 🚀 Development Approach
 
-This project was built using **AI-assisted development** with **Google Gemini AI** as a key contributor. Rather than writing boilerplate code and configuration manually, Gemini helped accelerate development by:
+This project was built using **AI-assisted development** with **OpenRouter AI gateway** as a key contributor. Rather than writing boilerplate code and configuration manually, Gemini helped accelerate development by:
 
 - Shaping the application architecture
 - Refining core business logic
@@ -52,7 +52,7 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 ## 🛠️ Tech Stack
 
 - **Backend**: Python, FastAPI, SQLModel (PostgreSQL).
-- **AI Engine**: Google Gemini Pro (via `google-genai` SDK).
+- **AI Engine**: OpenRouter (Google Gemini models via OpenAI SDK).
 - **Frontend**: Tailwind CSS, Vanilla JavaScript.
 - **Templating**: Jinja2.
 
@@ -62,13 +62,13 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 
 #### Local Development
 - Python 3.12+
-- Google Gemini API Key (get it at [Google AI Studio](https://aistudio.google.com/))
-- Google Gemini Model name (e.g., `gemini-2.5-flash`)
+- OpenRouter API Key (get it at [OpenRouter](https://openrouter.ai/keys))
+- Model name in format `google/gemini-2.5-flash`
 
 #### Docker Deployment
 - Docker 20.10+
 - Docker Compose 2.0+
-- Google Gemini API Key
+- OpenRouter API Key
 - PostgreSQL database (local container or external like Neon.tech)
 
 ### Installation
@@ -94,8 +94,8 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 4. **Configure Environment Variables**:
     Create a `.env` file or export the variables directly:
      ```bash
-      export GEMINI_API_KEY='your_api_key_here'
-      export GEMINI_MODEL='gemini-2.5-flash'
+      export OPENROUTER_API_KEY='your_api_key_here'
+      export OPENROUTER_MODEL='google/gemini-2.5-flash'
       export POSTGRES_HOST='localhost'
       export POSTGRES_USER='postgres'
       export POSTGRES_PASSWORD='your_password'
