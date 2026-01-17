@@ -19,3 +19,4 @@ venv/
 main_backup.py
 test.py
 fill.py
+traefik/acme.json

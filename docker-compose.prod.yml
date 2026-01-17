@@ -51,6 +51,24 @@ services:
     networks:
       - easyvocab-network
 
+  traefik:
+    image: traefik:latest
+    container_name: easyvocab-traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Dashboard
+    env_file:
+      - .env.production
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./traefik/dynamic_conf.yaml:/etc/traefik/dynamic_conf.yaml:ro
+      - ./traefik/acme.json:/acme.json
+    networks:
+      - easyvocab-network
+
 networks:
   easyvocab-network:
     driver: bridge

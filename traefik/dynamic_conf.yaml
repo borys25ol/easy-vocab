@@ -1,0 +1,30 @@
+http:
+  routers:
+    # Route for the main app.
+    fastapi-router:
+      rule: "Host(`{{ env "DOMAIN_NAME" }}`)"
+      entryPoints:
+        - websecure
+      service: fastapi-service
+      tls:
+        certResolver: resolver
+
+    # Route for MCP.
+    mcp-router:
+      rule: "Host(`{{ env "DOMAIN_NAME" }}`) && PathPrefix(`/mcp`)"
+      entryPoints:
+        - websecure
+      service: mcp-service
+      tls:
+        certResolver: resolver
+
+  services:
+    fastapi-service:
+      loadBalancer:
+        servers:
+          - url: "http://web:5000"
+
+    mcp-service:
+      loadBalancer:
+        servers:
+          - url: "http://mcp:6432"
