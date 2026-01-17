@@ -47,7 +47,7 @@ docker-prod-build:
 	docker compose -f docker-compose.prod.yml build
 
 docker-prod-up:
-	docker compose -f docker-compose.prod.yml up -d
+	docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 
 docker-prod-down:
 	docker compose -f docker-compose.prod.yml down

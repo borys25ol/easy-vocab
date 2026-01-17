@@ -55,6 +55,8 @@ services:
     image: traefik:latest
     container_name: easyvocab-traefik
     restart: always
+    command:
+      - "--certificatesresolvers.resolver.acme.email=${ACME_EMAIL}"
     ports:
       - "80:80"
       - "443:443"
