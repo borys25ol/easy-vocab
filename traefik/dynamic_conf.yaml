@@ -6,6 +6,8 @@ http:
       entryPoints:
         - websecure
       service: fastapi-service
+      middlewares:
+        - "auth-middleware"
       tls:
         certResolver: resolver
 
@@ -15,8 +17,17 @@ http:
       entryPoints:
         - websecure
       service: mcp-service
+      middlewares:
+        - "auth-middleware"
       tls:
         certResolver: resolver
+
+  middlewares:
+    # Define the Basic Auth middleware
+    auth-middleware:
+      basicAuth:
+        users:
+          - "{{ env "BASIC_AUTH_USERS" }}"
 
   services:
     fastapi-service:
