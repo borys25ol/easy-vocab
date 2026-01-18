@@ -7,6 +7,7 @@ repos:
       - id: check-added-large-files
       - id: check-toml
       - id: check-yaml
+        exclude: ^traefik/
       - id: check-json
       - id: mixed-line-ending
       - id: detect-private-key
