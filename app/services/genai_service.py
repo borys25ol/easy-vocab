@@ -99,6 +99,7 @@ def get_usage_examples(word: str) -> dict:
         synonyms = "No synonyms found"
 
     return {
+        "word": data.get("word", ""),
         "rank": int(data.get("rank", 0)),
         "rank_range": str(data.get("rank_range", "-")),
         "translation": data.get("translation", ""),
