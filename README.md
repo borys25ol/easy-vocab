@@ -26,6 +26,7 @@ EasyVocab is a smart learning companion designed to streamline vocabulary acquis
 - **Audio pronunciation**: Hear correct pronunciation with text-to-speech
 
 ### 🎨 User Experience
+- **Secure Authentication**: JWT-based session management with HTTP-only cookies
 - **Clean, minimalist design**: Focus on what matters—learning
 - **Mobile-friendly**: Learn on any device
 - **Color-coded difficulty**: Quick visual cues for word complexity
@@ -52,6 +53,7 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 ## 🛠️ Tech Stack
 
 - **Backend**: Python, FastAPI, SQLModel (PostgreSQL).
+- **Security**: Passlib (Bcrypt) for hashing, python-jose for JWT.
 - **AI Engine**: OpenRouter (Google Gemini models via OpenAI SDK).
 - **Frontend**: Tailwind CSS, Vanilla JavaScript.
 - **Templating**: Jinja2.
@@ -94,14 +96,30 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 4. **Configure Environment Variables**:
     Create a `.env` file or export the variables directly:
      ```bash
+      # AI & APIs
       export OPENROUTER_API_KEY='your_api_key_here'
       export OPENROUTER_MODEL='google/gemini-2.5-flash'
+
+      # Database
       export POSTGRES_HOST='localhost'
       export POSTGRES_USER='postgres'
       export POSTGRES_PASSWORD='your_password'
       export POSTGRES_DB='app'
       export POSTGRES_PORT='5432'
+
+      # Security & Authentication
+      export SECRET_KEY='your_generated_secret_key'
+
+      # MCP Configuration
+      export MCP_API_KEY='your_generated_mcp_key'
+      export MCP_PORT=6432
+      export MCP_HOST=0.0.0.0
       ```
+
+5. **Create an Admin User**:
+    ```bash
+    make create-user
+    ```
 
 #### Option 2: Docker Deployment
 

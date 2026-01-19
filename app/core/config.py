@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     SESSION_COOKIE_NAME: str = "session"
+    MCP_API_KEY: str = "dev_mcp_key_change_me"
+    MCP_PORT: int = 6432
+    MCP_HOST: str = "0.0.0.0"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

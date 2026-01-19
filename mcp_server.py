@@ -1,14 +1,40 @@
-from fastmcp import FastMCP
+from collections.abc import Callable
+from typing import Any
 
+from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
+from fastmcp.server.dependencies import get_http_request
+from fastmcp.server.middleware import Middleware, MiddlewareContext
+
+from app.core.config import settings
 from app.core.database import get_session
 from app.models.word import Word
 from app.services.genai_service import get_usage_examples
 
 
-MCP_PORT = 6432
-MCP_HOST = "0.0.0.0"
+class UserAuthMiddleware(Middleware):
+    async def on_call_tool(
+        self, context: MiddlewareContext, call_next: Callable
+    ) -> Any:
+        """Validate token in headers or query params before tool execution."""
+        request = get_http_request()
+
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        elif auth_header:
+            token = auth_header
+        else:
+            token = None
+
+        if not token or token != settings.MCP_API_KEY:
+            raise ToolError("Access denied: Invalid or missing token")
+
+        return await call_next(context)
+
 
 mcp = FastMCP(name="Words Learning Server")
+mcp.add_middleware(UserAuthMiddleware())
 
 
 @mcp.tool()
@@ -50,4 +76,4 @@ def add_word(word: str) -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)
+    mcp.run(transport="http", host=settings.MCP_HOST, port=settings.MCP_PORT)

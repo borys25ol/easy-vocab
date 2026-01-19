@@ -23,13 +23,10 @@ To use this MCP server add this configuration to your config file:
    ```
 
 2. **Set up environment variables** in `.env` file:
-   - `OPENROUTER_API_KEY` - Your OpenRouter API key (required for AI word enrichment)
-   - `OPENROUTER_MODEL` - Model to use (default: `google/gemini-2.5-flash`)
-   - `POSTGRES_HOST` - PostgreSQL host (default: `localhost`)
-   - `POSTGRES_USER` - PostgreSQL username (default: `postgres`)
-   - `POSTGRES_PASSWORD` - PostgreSQL password (default: `postgres`)
-   - `POSTGRES_DB` - Database name (default: `app`)
-   - `POSTGRES_PORT` - PostgreSQL port (default: `5432`)
+   - **AI & APIs**: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`
+   - **Database**: `POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`
+   - **Security & Authentication**: `SECRET_KEY`
+   - **MCP Configuration**: `MCP_API_KEY`, `MCP_PORT`, `MCP_HOST`
 
 3. **Set up PostgreSQL database:**
    - **Option A - Local Docker:**
@@ -98,8 +95,8 @@ Can you add the idiom "break the ice"?
 ## Server Details
 
 - **Transport**: HTTP
-- **Host**: `0.0.0.0` (accessible from localhost and Docker)
-- **Port**: `6432`
+- **Host**: Configurable via `.env` (default: `0.0.0.0`)
+- **Port**: Configurable via `.env` (default: `6432`)
 - **Framework**: FastMCP
 - **Database**: PostgreSQL (shared with main app)
 

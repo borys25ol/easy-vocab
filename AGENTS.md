@@ -6,6 +6,7 @@ EasyVocab is an AI-powered English vocabulary builder using OpenRouter AI gatewa
 
 **Tech Stack:**
 - Backend: Python 3.12+, FastAPI, SQLModel (PostgreSQL)
+- Security: Passlib (Bcrypt), python-jose (JWT)
 - AI: OpenRouter (Google Gemini via OpenAI SDK)
 - Frontend: Jinja2, Tailwind CSS, Vanilla JavaScript
 - MCP: FastMCP (HTTP transport on port 6432)
@@ -17,11 +18,13 @@ EasyVocab is an AI-powered English vocabulary builder using OpenRouter AI gatewa
 ```
 easy-words-learning/
 ├── app/
-│   ├── api/endpoints/    # FastAPI route handlers
-│   ├── core/            # Config, database
+│   ├── api/             # FastAPI route handlers
+│   │   ├── endpoints/   # Endpoint definitions (words, auth, pages)
+│   │   └── deps.py      # Authentication and database dependencies
+│   ├── core/            # Config, database, security utilities
 │   ├── models/          # SQLModel schemas
 │   ├── services/        # Business logic (GenAI service)
-│   └── main.py         # Application entry point
+│   └── main.py          # Application entry point
 ├── templates/           # Jinja2 HTML templates
 ├── static/              # CSS, JS, assets
 ├── mcp_server.py        # MCP server (FastMCP)
@@ -71,6 +74,7 @@ easy-words-learning/
 #### Local Development
 ```bash
 make ve           # Create venv and install dependencies
+make create-user  # Create an initial admin user
 ```
 
 #### Docker Development
@@ -110,6 +114,7 @@ make format       # Format with ruff
 make lint         # Run linting and fix issues
 make types        # Run mypy type checking
 make test         # Run pytest
+make create-user  # Create a new user via CLI
 make run_hooks    # Run pre-commit hooks on all files
 
 # Docker
@@ -169,6 +174,9 @@ pytest           # Direct pytest command
 - `GET /flashcards` - Flashcard learning
 - `GET /phrasal` - Phrasal verbs explorer
 - `GET /idioms` - Idioms list
+- `GET /login` - Login page
+- `POST /login` - Authenticate and set session cookie
+- `GET /logout` - Clear session cookie and redirect
 
 ---
 
@@ -201,13 +209,24 @@ Returns: Word details including id, word, translation, level, category, examples
 ### Environment Variables
 Required in `.env` file:
 ```bash
+# AI & APIs
 OPENROUTER_API_KEY=your_api_key_here
 OPENROUTER_MODEL=google/gemini-2.5-flash
+
+# Database
 POSTGRES_HOST=localhost
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
 POSTGRES_DB=app
 POSTGRES_PORT=5432
+
+# Security & Authentication
+SECRET_KEY=your_secure_secret_key
+
+# MCP Configuration
+MCP_API_KEY=your_secure_mcp_key
+MCP_PORT=6432
+MCP_HOST=0.0.0.0
 ```
 
 ### Settings Pattern
