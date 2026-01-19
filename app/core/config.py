@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "app"
     POSTGRES_PORT: int = 5432
 
+    SECRET_KEY: str = "dev_secret_key_change_me"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    SESSION_COOKIE_NAME: str = "session"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property

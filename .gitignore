@@ -1,9 +1,12 @@
-# Секрети
+# Secrets
 .env
 .env.production
 GOOGLE_API_KEY
 
-# База данных
+# Agents
+.agent/
+
+# Databse
 *.db
 
 # Python

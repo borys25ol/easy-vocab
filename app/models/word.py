@@ -1,4 +1,5 @@
 import datetime
+from typing import Any
 
 from sqlmodel import Field, SQLModel
 
@@ -26,6 +27,6 @@ class Word(SQLModel, table=True):  # type: ignore
     )
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Word":
+    def from_dict(cls, data: dict[str, Any]) -> "Word":
         data["word"] = data["word"].lower()
         return cls(**data)

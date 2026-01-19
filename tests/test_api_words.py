@@ -3,13 +3,18 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 
-def test_read_words_empty(client: TestClient) -> None:
-    response = client.get("/words/")
+def test_read_words_empty(auth_client: TestClient) -> None:
+    response = auth_client.get("/words/")
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_create_word(client: TestClient) -> None:
+def test_unauthorized_access(client: TestClient) -> None:
+    response = client.get("/words/")
+    assert response.status_code == 401
+
+
+def test_create_word(auth_client: TestClient) -> None:
     mock_data = {
         "rank": 100,
         "rank_range": "1-500",
@@ -27,7 +32,7 @@ def test_create_word(client: TestClient) -> None:
 
     # Patch where it is imported in the endpoint module
     with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
-        response = client.post("/words/", params={"word": "TestWord"})
+        response = auth_client.post("/words/", params={"word": "TestWord"})
 
     assert response.status_code == 200
     data = response.json()
@@ -36,7 +41,7 @@ def test_create_word(client: TestClient) -> None:
     assert data["id"] is not None
 
 
-def test_create_and_read_word(client: TestClient) -> None:
+def test_create_and_read_word(auth_client: TestClient) -> None:
     mock_data = {
         "rank": 100,
         "rank_range": "1-500",
@@ -53,9 +58,9 @@ def test_create_and_read_word(client: TestClient) -> None:
     }
 
     with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
-        client.post("/words/", params={"word": "TestWord"})
+        auth_client.post("/words/", params={"word": "TestWord"})
 
-    response = client.get("/words/")
+    response = auth_client.get("/words/")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1

@@ -3,12 +3,13 @@ from collections.abc import Sequence
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select, true
 
+from app.api.deps import get_current_user
 from app.core.database import get_session
 from app.models.word import Word
 from app.services.genai_service import get_usage_examples
 
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("", response_model=Sequence[Word])
@@ -112,7 +113,9 @@ def update_word(
 
 
 @router.delete("/{word_id}")
-def delete_word(word_id: int, session: Session = Depends(get_session)) -> dict:
+def delete_word(
+    word_id: int, session: Session = Depends(get_session)
+) -> dict[str, str]:
     db_word = session.get(entity=Word, ident=word_id)
     if not db_word:
         raise HTTPException(status_code=404, detail="Word not found")
