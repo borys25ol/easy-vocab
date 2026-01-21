@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,7 +25,8 @@
             transform: rotateY(180deg);
         }
 
-        .card-front, .card-back {
+        .card-front,
+        .card-back {
             backface-visibility: hidden;
             position: absolute;
             width: 100%;
@@ -33,7 +35,8 @@
             left: 0;
             display: flex;
             flex-direction: column;
-            border-left: none !important; /* Override common CSS for top border design */
+            border-left: none !important;
+            /* Override common CSS for top border design */
         }
 
         .card-back {
@@ -74,12 +77,15 @@
         }
     </style>
 </head>
+
 <body class="bg-slate-50 min-h-screen flex flex-col items-center p-6 font-sans text-slate-900">
 
 <div class="max-w-md w-full">
     <div class="flex justify-between items-center mb-6 px-2">
-        <a href="/" class="text-slate-400 hover:text-slate-600 text-xs font-bold tracking-widest uppercase">← Back</a>
-        <div id="counter" class="text-indigo-600 font-black text-xs uppercase tracking-[0.2em] italic text-right">0 /
+        <a href="/" class="text-slate-400 hover:text-slate-600 text-xs font-bold tracking-widest uppercase">←
+            Back</a>
+        <div id="counter" class="text-indigo-600 font-black text-xs uppercase tracking-[0.2em] italic text-right">0
+            /
             0
         </div>
     </div>
@@ -111,7 +117,7 @@
                 <div class="flex flex-col h-full">
                     <div class="flex justify-between items-start mb-6">
                         <div class="text-left">
-                            <span id="typeTag" class="text-[9px] font-black uppercase text-indigo-400 tracking-widest">WORD</span>
+                                <span id="typeTag" class="text-[9px] font-black uppercase text-indigo-400 tracking-widest">WORD</span>
                             <h3 id="translationText" class="text-2xl font-black text-slate-800 mt-1">...</h3>
                         </div>
                         <div class="text-right">
@@ -127,13 +133,14 @@
                         </div>
                         <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
                             <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest">Range</p>
-                            <p id="rankRangeText" class="text-[10px] font-black text-slate-700 mt-1 uppercase">...</p>
+                            <p id="rankRangeText" class="text-[10px] font-black text-slate-700 mt-1 uppercase">...
+                            </p>
                         </div>
                     </div>
 
                     <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                         <div class="border-t border-slate-100 pt-4">
-                            <span class="text-[9px] font-black uppercase text-slate-400 block mb-3 tracking-widest italic">Examples:</span>
+                                <span class="text-[9px] font-black uppercase text-slate-400 block mb-3 tracking-widest italic">Examples:</span>
                             <div id="examplesContainer"
                                  class="text-sm text-slate-600 italic leading-relaxed space-y-3"></div>
                         </div>
@@ -209,8 +216,8 @@
             document.getElementById('freqGroupText').innerText = word.frequency_group || '-';
             document.getElementById('rankRangeText').innerText = word.rank_range || '-';
 
-            if (examples && examples !== "Examples not found") {
-                document.getElementById('examplesContainer').innerHTML = examples
+            if (word.examples && word.examples !== "Examples not found") {
+                document.getElementById('examplesContainer').innerHTML = word.examples
                     .split('\n')
                     .map(ex => `
                         <div class="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-[13px] hover:bg-white transition-colors">
