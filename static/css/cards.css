@@ -69,3 +69,44 @@
 .modal.active {
     display: flex;
 }
+
+/* Sidebar & Layout */
+aside {
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.-ml-64 {
+    margin-left: -16rem;
+    /* Fully hide sidebar */
+}
+
+.sidebar-content {
+    transition: opacity 0.2s ease;
+}
+
+aside.w-16 .sidebar-content {
+    align-items: center;
+}
+
+aside.w-16 h1 {
+    font-size: 1rem;
+    text-align: center;
+}
+
+main {
+    overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+    aside {
+        display: none !important;
+    }
+
+    #desktopToggle {
+        display: none !important;
+    }
+}

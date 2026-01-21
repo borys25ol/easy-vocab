@@ -71,116 +71,187 @@
     </style>
 </head>
 
-<body class="bg-slate-50 min-h-screen p-4 md:p-8 text-slate-900 font-sans">
+<body class="bg-slate-50 min-h-screen text-slate-900 font-sans transition-all duration-300">
 
-<div class="max-w-2xl mx-auto">
-    <header class="text-center mb-10 relative">
-        <div
-                class="absolute top-0 right-0 flex items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-2xl shadow-sm">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">👤 {{ user.username }}</span>
-            <div class="h-4 w-[1px] bg-slate-200"></div>
-            <a href="/logout"
-               class="text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider">Logout</a>
+<div class="flex min-h-screen relative">
+    <!-- Sidebar -->
+    <aside id="sidebar"
+           class="w-64 bg-white border-r border-slate-200 p-6 flex-shrink-0 hidden md:flex flex-col gap-8 transition-all duration-300 overflow-hidden relative">
+        <div class="sticky top-8 sidebar-content">
+            <h1 class="text-2xl font-black text-slate-800 tracking-tight italic mb-8 whitespace-nowrap">MY <span
+                    class="text-indigo-600">CARDS</span></h1>
+
+            <nav class="flex flex-col gap-6">
+                <!-- Translations Section -->
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Translations</p>
+                    <div class="flex flex-col gap-2">
+                        <a href="/quiz"
+                           class="flex items-center gap-3 text-sm font-bold bg-indigo-600 text-white px-4 py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
+                            <span>🇺🇦 ➡️ 🇺🇸</span>
+                            UA to EN
+                        </a>
+                        <a href="/quiz_translate"
+                           class="flex items-center gap-3 text-sm font-bold bg-indigo-600 text-white px-4 py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
+                            <span>🇺🇸 ➡️ 🇺🇦</span>
+                            EN to UA
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Flash Cards Section -->
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Flash Cards</p>
+                    <a href="/flashcards"
+                       class="flex items-center gap-3 text-sm font-bold bg-indigo-600 text-white px-4 py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
+                        <span>🗂️</span>
+                        Flash Cards
+                    </a>
+                </div>
+
+                <!-- Specialized Section -->
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Specialized</p>
+                    <div class="flex flex-col gap-2">
+                        <a href="/phrasal"
+                           class="flex items-center gap-3 text-sm font-bold bg-indigo-600 text-white px-4 py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
+                            <span>🗣️</span>
+                            Phrasal Verbs
+                        </a>
+                        <a href="/idioms"
+                           class="flex items-center gap-3 text-sm font-bold bg-indigo-600 text-white px-4 py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">
+                            <span>💡</span>
+                            Idioms
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="mt-10">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Display Options</p>
+                <button onclick="toggleSort()" id="sortBtn"
+                        class="w-full text-xs font-bold bg-white border border-slate-200 px-4 py-3 rounded-xl hover:bg-slate-50 transition-all text-slate-600 shadow-sm flex items-center justify-center gap-2">
+                    <span>⏳</span>
+                    Sorting: By Date ↓
+                </button>
+            </div>
         </div>
+    </aside>
 
-        <h1 class="text-4xl font-black text-slate-800 tracking-tight italic">MY <span
-                class="text-indigo-600">CARDS</span></h1>
+    <!-- Main Content -->
+    <main class="flex-1 p-4 md:p-8 relative">
+        <!-- Desktop Sidebar Toggle (Visible when sidebar hidden) -->
+        <button onclick="toggleSidebar()" id="desktopToggle"
+                class="hidden md:flex absolute -left-4 top-10 bg-white border border-slate-200 w-8 h-8 rounded-full items-center justify-center shadow-md hover:bg-slate-50 z-20 transition-all text-lg font-bold">
+            <span id="toggleIcon">◀</span>
+        </button>
+        <div class="max-w-2xl mx-auto">
+            <header class="relative mb-10 text-center">
+                <div
+                        class="absolute top-0 right-0 flex items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-2xl shadow-sm">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">👤 {{ user.username
+                            }}</span>
+                    <div class="h-4 w-[1px] bg-slate-200"></div>
+                    <a href="/logout"
+                       class="text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider">Logout</a>
+                </div>
 
-        <div class="mt-6 flex justify-center">
-            <button onclick="toggleSort()" id="sortBtn"
-                    class="text-xs font-bold bg-white border border-slate-200 px-4 py-2 rounded-full hover:bg-slate-50 transition-all text-slate-600 shadow-sm">
-                Sorting: By Date ↓
-            </button>
+                <!-- Logo -->
+                <h1 class="text-4xl font-black text-slate-800 tracking-tight italic">MY <span
+                        class="text-indigo-600">CARDS</span></h1>
+            </header>
+
+            <form id="addWordForm"
+                  class="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 mb-10 flex flex-wrap md:flex-nowrap gap-3 border border-slate-100">
+                <input type="text" id="target_word" placeholder="Word" required
+                       class="flex-1 min-w-[150px] p-3 outline-none focus:ring-2 ring-indigo-500 rounded-xl bg-slate-50">
+                <button type="submit" id="submitBtn"
+                        class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 min-w-[120px]">
+                    <span id="btnText">Add</span>
+                    <div id="btnSpinner" class="spinner hidden"></div>
+                </button>
+            </form>
+
+            <!-- Navigation Buttons for Mobile -->
+            <div class="md:hidden flex flex-wrap justify-center items-center px-2 mb-8 mt-8 gap-3">
+                <a href="/quiz"
+                   class="text-[10px] font-bold bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">UA
+                    to EN</a>
+                <a href="/quiz_translate"
+                   class="text-[10px] font-bold bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">EN
+                    to UA</a>
+                <a href="/flashcards"
+                   class="text-[10px] font-bold bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Flash
+                    Cards</a>
+                <a href="/phrasal"
+                   class="text-[10px] font-bold bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Phrasal</a>
+                <a href="/idioms"
+                   class="text-[10px] font-bold bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Idioms</a>
+                <button onclick="toggleSort()" id="sortBtnMobile"
+                        class="text-[10px] font-bold bg-white border border-slate-200 px-4 py-2 rounded-full hover:bg-slate-50 transition-all text-slate-600 shadow-sm">
+                    Sort
+                    ↓
+                </button>
+            </div>
+
+            <div id="categoryFilters" class="mt-6 flex flex-wrap justify-center gap-2">
+                <button onclick="filterByCategory('All')"
+                        class="cat-filter active-cat px-4 py-1.5 rounded-full text-xs font-bold border transition-all">
+                    All
+                </button>
+                <button onclick="filterByCategory('Phrases')"
+                        class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Phrases
+                </button>
+                <button onclick="filterByCategory('Verbs')"
+                        class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Verbs
+                </button>
+                <button onclick="filterByCategory('Nouns')"
+                        class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Nouns
+                </button>
+                <button onclick="filterByCategory('Adjectives')"
+                        class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Adjectives
+                </button>
+                <button onclick="filterByCategory('Adverbs')"
+                        class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Adverbs
+                </button>
+            </div>
+
+            <div id="levelFilters" class="mt-4 flex flex-wrap justify-center gap-2">
+                <button onclick="filterByLevel('All')" data-level='All'
+                        class="active-lvl px-3 py-1 rounded-lg text-[10px] font-bold border border-slate-200 transition-all uppercase">
+                    All Levels
+                </button>
+                <button onclick="filterByLevel('A1')" data-level='A1'
+                        class="px-3 py-1 rounded-lg text-[10px] font-bold border border-green-200 text-green-600">A1
+                </button>
+                <button onclick="filterByLevel('A2')" data-level='A2'
+                        class="px-3 py-1 rounded-lg text-[10px] font-bold border border-yellow-200 text-yellow-600">A2
+                </button>
+                <button onclick="filterByLevel('B1')" data-level='B1'
+                        class="px-3 py-1 rounded-lg text-[10px] font-bold border border-blue-200 text-blue-600">B1
+                </button>
+                <button onclick="filterByLevel('B2')" data-level='B2'
+                        class="px-3 py-1 rounded-lg text-[10px] font-bold border border-purple-200 text-purple-600">B2
+                </button>
+                <button onclick="filterByLevel('C1')" data-level='C1'
+                        class="px-3 py-1 rounded-lg text-[10px] font-bold border border-orange-200 text-orange-600">C1
+                </button>
+                <button onclick="filterByLevel('C2')" data-level='C2'
+                        class="px-3 py-1 rounded-lg text-[10px] font-bold border border-red-200 text-red-600">C2
+                </button>
+            </div>
+
+            <div class="flex justify-between items-center px-2 mb-3 mt-8">
+                <div id="resultsCounter"
+                     class="text-xs font-bold bg-white border border-slate-200 text-slate-600 px-6 py-2 rounded-full shadow-sm">
+                    Found: 0 words
+                </div>
+                <div id="activeFilters" class="text-[10px] font-bold text-indigo-400 uppercase italic"></div>
+            </div>
+
+            <div id="wordsList" class="space-y-4 mt-6"></div>
         </div>
-    </header>
-
-    <form id="addWordForm"
-          class="bg-white p-4 rounded-2xl shadow-xl shadow-slate-200/50 mb-10 flex flex-wrap md:flex-nowrap gap-3 border border-slate-100">
-        <input type="text" id="target_word" placeholder="Word" required
-               class="flex-1 min-w-[150px] p-3 outline-none focus:ring-2 ring-indigo-500 rounded-xl bg-slate-50">
-        <button type="submit" id="submitBtn"
-                class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 min-w-[120px]">
-            <span id="btnText">Add</span>
-            <div id="btnSpinner" class="spinner hidden"></div>
-        </button>
-    </form>
-
-    <div class="flex justify-center items-center px-2 mb-8 mt-8 gap-5 flex-wrap">
-        <a href="/quiz"
-           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">UA
-            to US</a>
-        <a href="/quiz_translate"
-           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">US
-            to UA</a>
-        <a href="/flashcards"
-           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Flash
-            Cards</a>
-    </div>
-
-    <div class="flex justify-center items-center px-2 mb-8 mt-8 gap-5 flex-wrap">
-        <a href="/phrasal"
-           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Phrasal
-            Verbs</a>
-        <a href="/idioms"
-           class="text-xs font-bold bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100">Idioms
-        </a>
-    </div>
-
-    <div id="categoryFilters" class="mt-6 flex flex-wrap justify-center gap-2">
-        <button onclick="filterByCategory('All')"
-                class="cat-filter active-cat px-4 py-1.5 rounded-full text-xs font-bold border transition-all">All
-        </button>
-        <button onclick="filterByCategory('Phrases')"
-                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Phrases
-        </button>
-        <button onclick="filterByCategory('Verbs')"
-                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Verbs
-        </button>
-        <button onclick="filterByCategory('Nouns')"
-                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Nouns
-        </button>
-        <button onclick="filterByCategory('Adjectives')"
-                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Adjectives
-        </button>
-        <button onclick="filterByCategory('Adverbs')"
-                class="cat-filter px-4 py-1.5 rounded-full text-xs font-bold border transition-all">Adverbs
-        </button>
-    </div>
-
-    <div id="levelFilters" class="mt-4 flex flex-wrap justify-center gap-2">
-        <button onclick="filterByLevel('All')" data-level='All'
-                class="active-lvl px-3 py-1 rounded-lg text-[10px] font-bold border border-slate-200 transition-all uppercase">
-            All Levels
-        </button>
-        <button onclick="filterByLevel('A1')" data-level='A1'
-                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-green-200 text-green-600">A1
-        </button>
-        <button onclick="filterByLevel('A2')" data-level='A2'
-                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-yellow-200 text-yellow-600">A2
-        </button>
-        <button onclick="filterByLevel('B1')" data-level='B1'
-                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-blue-200 text-blue-600">B1
-        </button>
-        <button onclick="filterByLevel('B2')" data-level='B2'
-                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-purple-200 text-purple-600">B2
-        </button>
-        <button onclick="filterByLevel('C1')" data-level='C1'
-                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-orange-200 text-orange-600">C1
-        </button>
-        <button onclick="filterByLevel('C2')" data-level='C2'
-                class="px-3 py-1 rounded-lg text-[10px] font-bold border border-red-200 text-red-600">C2
-        </button>
-    </div>
-
-    <div class="flex justify-between items-center px-2 mb-3 mt-8">
-        <div id="resultsCounter"
-             class="text-xs font-bold bg-white border border-slate-200 text-slate-600 px-6 py-2 rounded-full shadow-sm">
-            Found: 0 words
-        </div>
-        <div id="activeFilters" class="text-[10px] font-bold text-indigo-400 uppercase italic"></div>
-    </div>
-
-    <div id="wordsList" class="space-y-4 mt-6"></div>
+    </main>
 </div>
 
 <div id="editModal" class="modal">
@@ -267,7 +338,15 @@
 
     function toggleSort() {
         currentSort = currentSort === 'date' ? 'rank' : 'date';
-        document.getElementById('sortBtn').innerText = currentSort === 'date' ? 'Sorting: By Date ↓' : 'Sorting: By Rank ↑';
+        const label = currentSort === 'date' ? 'Sorting: By Date ↓' : 'Sorting: By Rank ↑';
+        const mobileLabel = currentSort === 'date' ? 'Sort ↓' : 'Sort ↑';
+
+        const sortBtn = document.getElementById('sortBtn');
+        const sortBtnMobile = document.getElementById('sortBtnMobile');
+
+        if (sortBtn) sortBtn.innerHTML = `<span>⏳</span> ${label}`;
+        if (sortBtnMobile) sortBtnMobile.innerText = mobileLabel;
+
         loadWords();
     }
 
@@ -328,6 +407,29 @@
             loadWords();
         }
     };
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const icon = document.getElementById('toggleIcon');
+        const toggleBtn = document.getElementById('desktopToggle');
+
+        const isHidden = sidebar.classList.toggle('-ml-64');
+
+        // Update icon and position
+        icon.innerText = isHidden ? '▶' : '◀';
+        if (isHidden) {
+            toggleBtn.style.left = '1.25rem';
+        } else {
+            toggleBtn.style.left = '-1rem';
+        }
+
+        localStorage.setItem('sidebarHidden', isHidden);
+    }
+
+    // Initialize sidebar state
+    if (localStorage.getItem('sidebarHidden') === 'true') {
+        toggleSidebar();
+    }
 
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     loadWords();
