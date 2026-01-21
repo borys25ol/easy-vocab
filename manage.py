@@ -7,6 +7,7 @@ from sqlmodel import select
 from app.core.database import get_session
 from app.core.security import get_password_hash
 from app.models.user import User
+from app.models.word import Word  # noqa
 
 
 @click.group()

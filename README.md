@@ -203,6 +203,18 @@ make docker-prod-down
 ```
 
 
+## 🗄️ Database Migrations
+
+EasyVocab uses Alembic for schema migrations. The web container runs
+`alembic upgrade head` on startup so your database stays up to date.
+
+Manual migration commands:
+```bash
+make db-upgrade
+make db-revision MSG="add new column"
+make db-downgrade
+```
+
 ## 🤖 MCP Server Integration
 
 This project includes an **MCP (Model Context Protocol) server** that allows AI assistants to directly add words to your vocabulary database.

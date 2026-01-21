@@ -1,3 +1,5 @@
+MSG ?= migration
+
 ve:
 	python3 -m venv .ve; \
 	. .ve/bin/activate; \
@@ -8,6 +10,15 @@ clean:
 
 runserver:
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 5000
+
+db-upgrade:
+	alembic upgrade head
+
+db-revision:
+	alembic revision --autogenerate -m "$(MSG)"
+
+db-downgrade:
+	alembic downgrade -1
 
 run_hooks:
 	pre-commit run --all-files
