@@ -44,8 +44,10 @@ async def login(
         httponly=True,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="lax",
-        secure=False,  # Set to True in production with HTTPS
+        samesite=settings.SESSION_COOKIE_SAMESITE,
+        secure=settings.SESSION_COOKIE_SECURE,
+        path=settings.COOKIE_PATH,
+        domain=settings.COOKIE_DOMAIN,
     )
     return response
 
@@ -53,5 +55,11 @@ async def login(
 @router.get("/logout")
 async def logout() -> RedirectResponse:
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    response.delete_cookie(settings.SESSION_COOKIE_NAME)
+    response.delete_cookie(
+        settings.SESSION_COOKIE_NAME,
+        path=settings.COOKIE_PATH,
+        domain=settings.COOKIE_DOMAIN,
+        samesite=settings.SESSION_COOKIE_SAMESITE,
+        secure=settings.SESSION_COOKIE_SECURE,
+    )
     return response

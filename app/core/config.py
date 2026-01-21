@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    ENV: str = "development"
     OPENROUTER_API_KEY: str = "unknown"
     OPENROUTER_MODEL: str = "google/gemini-2.5-flash"
     OPENROUTER_SITE_URL: str = ""
@@ -20,6 +21,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     SESSION_COOKIE_NAME: str = "session"
+    COOKIE_SECURE: bool | None = None
+    COOKIE_SAMESITE: str = "lax"
+    COOKIE_PATH: str = "/"
+    COOKIE_DOMAIN: str | None = None
     MCP_PORT: int = 6432
     MCP_HOST: str = "0.0.0.0"
 
@@ -31,6 +36,16 @@ class Settings(BaseSettings):
             f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
+
+    @property
+    def SESSION_COOKIE_SECURE(self) -> bool:
+        if self.COOKIE_SECURE is None:
+            return self.ENV.lower() == "production"
+        return self.COOKIE_SECURE
+
+    @property
+    def SESSION_COOKIE_SAMESITE(self) -> str:
+        return self.COOKIE_SAMESITE.lower()
 
 
 settings = Settings()
