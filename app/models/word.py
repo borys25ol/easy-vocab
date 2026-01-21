@@ -1,13 +1,18 @@
 import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class Word(SQLModel, table=True):  # type: ignore
     __tablename__ = "words"
 
     id: int | None = Field(default=None, primary_key=True, index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
     word: str = Field(nullable=False)
     translation: str = Field(nullable=False)
     examples: str | None = Field(default=None)
@@ -26,7 +31,9 @@ class Word(SQLModel, table=True):  # type: ignore
         default_factory=lambda: datetime.datetime.now(datetime.UTC)
     )
 
+    user: "User" = Relationship(back_populates="words")
+
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Word":
+    def from_dict(cls, data: dict[str, Any], user_id: int) -> "Word":
         data["word"] = data["word"].lower()
-        return cls(**data)
+        return cls(**data, user_id=user_id)

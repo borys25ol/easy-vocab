@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -33,19 +33,55 @@ def test_user_fixture(session: Session) -> User:
     return user
 
 
-@pytest.fixture(name="client")
-def client_fixture(session: Session) -> Generator[TestClient, None, None]:
+@pytest.fixture(name="test_user_2")
+def test_user_2_fixture(session: Session) -> User:
+    user = User(
+        username="testuser2", hashed_password=get_password_hash("testpassword2")
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+@pytest.fixture(name="client_factory")
+def client_factory_fixture(
+    session: Session,
+) -> Generator[Callable[[], TestClient], None, None]:
+    """Factory fixture that creates new TestClient instances."""
+
     def get_session_override() -> Generator[Session, None, None]:
         yield session
 
     app.dependency_overrides[get_session] = get_session_override
-    client = TestClient(app)
-    yield client
+
+    def create_client() -> TestClient:
+        return TestClient(app)
+
+    yield create_client
     app.dependency_overrides.clear()
 
 
+@pytest.fixture(name="client")
+def client_fixture(client_factory: Callable[[], TestClient]) -> TestClient:
+    return client_factory()
+
+
 @pytest.fixture(name="auth_client")
-def auth_client_fixture(client: TestClient, test_user: User) -> TestClient:
+def auth_client_fixture(
+    client_factory: Callable[[], TestClient], test_user: User
+) -> TestClient:
+    client = client_factory()
     access_token = create_access_token(subject=test_user.username)
+    client.cookies.update({settings.SESSION_COOKIE_NAME: access_token})
+    return client
+
+
+@pytest.fixture(name="auth_client_2")
+def auth_client_2_fixture(
+    client_factory: Callable[[], TestClient], test_user_2: User
+) -> TestClient:
+    client = client_factory()
+    access_token = create_access_token(subject=test_user_2.username)
     client.cookies.update({settings.SESSION_COOKIE_NAME: access_token})
     return client
