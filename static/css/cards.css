@@ -97,10 +97,6 @@ aside.w-16 h1 {
     text-align: center;
 }
 
-main {
-    overflow-x: hidden;
-}
-
 @media (max-width: 768px) {
     aside {
         display: none !important;
