@@ -19,4 +19,6 @@ jobs:
           script: |
             cd ${{ secrets.SERVER_PATH }}
             git pull origin main
-            docker compose -f docker-compose.prod.yml up -d --build
+            make docker-prod-down
+            make docker-prod-build
+            make docker-prod-up
