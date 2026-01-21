@@ -23,7 +23,7 @@ To use this MCP server add this configuration to your config file:
    ```
 
 2. **Set up environment variables** in `.env` file:
-   - **AI & APIs**: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`
+   - **AI & APIs**: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `OPENROUTER_TIMEOUT_SECONDS`, `OPENROUTER_MAX_RETRIES`, `OPENROUTER_FALLBACK_MODELS`
    - **Database**: `POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`
    - **Security & Authentication**: `SECRET_KEY`
    - **MCP Configuration**: `MCP_PORT`, `MCP_HOST`

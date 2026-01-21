@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     OPENROUTER_MODEL: str = "google/gemini-2.5-flash"
     OPENROUTER_SITE_URL: str = ""
     OPENROUTER_APP_TITLE: str = "EasyVocab"
+    OPENROUTER_TIMEOUT_SECONDS: int = 20
+    OPENROUTER_MAX_RETRIES: int = 2
+    OPENROUTER_FALLBACK_MODELS: list[str] = ["google/gemini-2.5-pro"]
 
     POSTGRES_HOST: str = "localhost"
     POSTGRES_USER: str = "postgres"

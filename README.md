@@ -99,6 +99,9 @@ This approach allowed for rapid iteration while focusing on delivering an excell
       # AI & APIs
       export OPENROUTER_API_KEY='your_api_key_here'
       export OPENROUTER_MODEL='google/gemini-2.5-flash'
+      export OPENROUTER_TIMEOUT_SECONDS='20'
+      export OPENROUTER_MAX_RETRIES='2'
+      export OPENROUTER_FALLBACK_MODELS='["google/gemini-2.5-pro"]'
 
       # Database
       export POSTGRES_HOST='localhost'
