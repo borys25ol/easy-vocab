@@ -228,6 +228,12 @@ MCP_PORT=6432
 MCP_HOST=0.0.0.0
 ```
 
+### MCP Authentication
+
+- Each user has a unique MCP API key generated via CLI.
+- Send the key in the `EASY_VOCAB_API_KEY` header for MCP requests.
+- For existing databases, run `uv run python -m scripts.add_user_mcp_api_key`.
+
 ### Settings Pattern
 Uses `pydantic-settings.BaseSettings` in `app/core/config.py`:
 - Auto-loads from `.env` file

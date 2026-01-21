@@ -120,6 +120,12 @@ python manage.py rotate-mcp-key --username <name>
 python manage.py backfill-mcp-keys
 ```
 
+### Migration for existing databases
+
+```bash
+uv run python -m scripts.add_user_mcp_api_key
+```
+
 ## Troubleshooting
 
 ### Server won't start
