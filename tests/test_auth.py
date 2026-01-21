@@ -44,8 +44,5 @@ def test_logout(auth_client: TestClient) -> None:
 
 def test_protected_route_redirect(client: TestClient) -> None:
     response = client.get("/", follow_redirects=False)
-    # get_current_user raises 401, pages router handles it
-    # (default FastAPI behavior for now)
-    # Actually, in app/api/endpoints/pages.py we just have Depends(get_current_user)
-    # If it raises 401, the response will be 401 unless there's an exception handler.
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.status_code == status.HTTP_303_SEE_OTHER
+    assert response.headers["location"] == "/login"

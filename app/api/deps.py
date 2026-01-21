@@ -1,4 +1,5 @@
 from fastapi import Depends, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
 from app.core.config import settings
@@ -47,3 +48,14 @@ async def get_optional_user(
 
     statement = select(User).where(User.username == username)
     return db.exec(statement).first()
+
+
+async def require_user_or_redirect(
+    request: Request, db: Session = Depends(get_session)
+) -> User | RedirectResponse:
+    try:
+        return await get_current_user(request=request, db=db)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            return RedirectResponse(url="/login", status_code=303)
+        raise
