@@ -372,7 +372,11 @@
         const w = document.getElementById('edit_target').value;
         const t = document.getElementById('edit_translation').value;
         const c = document.getElementById('edit_category').value;
-        await fetch(`/words/${id}?word=${encodeURIComponent(w)}&translation=${encodeURIComponent(t)}&category=${encodeURIComponent(c)}`, {method: 'PUT'});
+        await fetch(`/words/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({word: w, translation: t, category: c})
+        });
         closeModal('editModal');
         loadWords();
     }
@@ -398,7 +402,11 @@
         document.getElementById('btnText').innerText = 'Searching...';
         document.getElementById('btnSpinner').classList.remove('hidden');
         try {
-            await fetch(`/words?word=${encodeURIComponent(word)}`, {method: 'POST'});
+            await fetch('/words', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({word})
+            });
             e.target.reset();
         } finally {
             btn.disabled = false;

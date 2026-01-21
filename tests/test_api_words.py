@@ -32,7 +32,7 @@ def test_create_word(auth_client: TestClient) -> None:
 
     # Patch where it is imported in the endpoint module
     with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
-        response = auth_client.post("/words/", params={"word": "TestWord"})
+        response = auth_client.post("/words/", json={"word": "TestWord"})
 
     assert response.status_code == 200
     data = response.json()
@@ -58,7 +58,7 @@ def test_create_and_read_word(auth_client: TestClient) -> None:
     }
 
     with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
-        auth_client.post("/words/", params={"word": "TestWord"})
+        auth_client.post("/words/", json={"word": "TestWord"})
 
     response = auth_client.get("/words/")
     assert response.status_code == 200
@@ -91,7 +91,7 @@ def test_user_cannot_see_other_users_words(
 
     # User 1 creates a word
     with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
-        response = auth_client.post("/words/", params={"word": "UserOneWord"})
+        response = auth_client.post("/words/", json={"word": "UserOneWord"})
     assert response.status_code == 200
 
     # User 2 should NOT see user 1's word
@@ -126,7 +126,7 @@ def test_user_cannot_delete_other_users_words(
 
     # User 1 creates a word
     with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
-        response = auth_client.post("/words/", params={"word": "ProtectedWord"})
+        response = auth_client.post("/words/", json={"word": "ProtectedWord"})
     assert response.status_code == 200
     word_id = response.json()["id"]
 
@@ -160,14 +160,14 @@ def test_user_cannot_update_other_users_words(
 
     # User 1 creates a word
     with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
-        response = auth_client.post("/words/", params={"word": "OriginalWord"})
+        response = auth_client.post("/words/", json={"word": "OriginalWord"})
     assert response.status_code == 200
     word_id = response.json()["id"]
 
     # User 2 tries to update user 1's word - should get 404
     response = auth_client_2.put(
         f"/words/{word_id}",
-        params={"word": "hacked", "translation": "hacked", "category": "Hacked"},
+        json={"word": "hacked", "translation": "hacked", "category": "Hacked"},
     )
     assert response.status_code == 404
 
@@ -197,7 +197,7 @@ def test_user_cannot_toggle_other_users_words(
 
     # User 1 creates a word
     with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
-        response = auth_client.post("/words/", params={"word": "LearnMe"})
+        response = auth_client.post("/words/", json={"word": "LearnMe"})
     assert response.status_code == 200
     word_id = response.json()["id"]
 

@@ -1,12 +1,13 @@
 from collections.abc import Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, true
 
 from app.api.deps import get_current_user
 from app.core.database import get_session
 from app.models.user import User
 from app.models.word import Word
+from app.schemas.word import WordCreate, WordRead, WordUpdate
 from app.services.genai_service import get_usage_examples
 
 
@@ -21,7 +22,7 @@ def get_user_word(word_id: int, user_id: int, session: Session) -> Word:
     return db_word
 
 
-@router.get("", response_model=Sequence[Word])
+@router.get("", response_model=Sequence[WordRead])
 def get_words(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -34,12 +35,13 @@ def get_words(
     return session.exec(statement).all()
 
 
-@router.post("", response_model=Word)
+@router.post("", response_model=WordRead)
 def create_word(
-    word_text: str = Query(..., alias="word"),
+    word_in: WordCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> Word:
+    word_text = word_in.word
     word_info = get_usage_examples(word=word_text)
 
     new_word = Word(
@@ -88,7 +90,7 @@ def get_phrasal_roots(
     return sorted(roots)
 
 
-@router.get("/phrasal/{root}", response_model=Sequence[Word])
+@router.get("/phrasal/{root}", response_model=Sequence[WordRead])
 def get_phrasal_verbs(
     root: str,
     session: Session = Depends(get_session),
@@ -107,7 +109,7 @@ def get_phrasal_verbs(
     return session.exec(statement).all()
 
 
-@router.get("/idioms", response_model=Sequence[Word])
+@router.get("/idioms", response_model=Sequence[WordRead])
 def get_idioms(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -124,20 +126,21 @@ def get_idioms(
     return session.exec(statement).all()
 
 
-@router.put("/{word_id}", response_model=Word)
+@router.put("/{word_id}", response_model=WordRead)
 def update_word(
     word_id: int,
-    word: str,
-    translation: str,
-    category: str,
+    word_update: WordUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> Word:
     db_word = get_user_word(word_id, current_user.id, session)  # type: ignore
 
-    db_word.word = word
-    db_word.translation = translation
-    db_word.category = category
+    if word_update.word is not None:
+        db_word.word = word_update.word
+    if word_update.translation is not None:
+        db_word.translation = word_update.translation
+    if word_update.category is not None:
+        db_word.category = word_update.category
 
     session.add(db_word)
     session.commit()
@@ -157,7 +160,7 @@ def delete_word(
     return {"message": "Deleted successfully"}
 
 
-@router.patch("/{word_id}/toggle_learned", response_model=Word)
+@router.patch("/{word_id}/toggle_learned", response_model=WordRead)
 def toggle_learned(
     word_id: int,
     session: Session = Depends(get_session),
