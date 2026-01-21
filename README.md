@@ -111,7 +111,6 @@ This approach allowed for rapid iteration while focusing on delivering an excell
       export SECRET_KEY='your_generated_secret_key'
 
       # MCP Configuration
-      export MCP_API_KEY='your_generated_mcp_key'
       export MCP_PORT=6432
       export MCP_HOST=0.0.0.0
       ```
@@ -120,6 +119,9 @@ This approach allowed for rapid iteration while focusing on delivering an excell
     ```bash
     make create-user
     ```
+
+   The MCP API key for the user is printed during creation. Send it in the
+   `EASY_VOCAB_API_KEY` header when calling the MCP server.
 
 #### Option 2: Docker Deployment
 
@@ -223,6 +225,28 @@ python mcp_server.py
 ```
 
 The server will start on `http://localhost:6432`
+
+### MCP Authentication
+
+- Each user has a unique MCP API key generated via CLI.
+- Send the key in the `EASY_VOCAB_API_KEY` header for all MCP requests.
+
+```bash
+# Create user and print MCP key
+python manage.py create-user --username <name> --password <password>
+
+# Rotate a user's MCP key
+python manage.py rotate-mcp-key --username <name>
+
+# Backfill MCP keys for existing users
+python manage.py backfill-mcp-keys
+```
+
+If your database predates the `mcp_api_key` column, run:
+
+```bash
+uv run python -m scripts.add_user_mcp_api_key
+```
 
 ### Available Tools
 

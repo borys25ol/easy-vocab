@@ -18,6 +18,9 @@ engine = create_engine(
 
 
 def create_db_and_tables() -> None:
+    from app.models.user import User  # noqa
+    from app.models.word import Word  # noqa
+
     SQLModel.metadata.create_all(engine)
 
 

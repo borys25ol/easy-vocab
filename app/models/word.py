@@ -37,3 +37,24 @@ class Word(SQLModel, table=True):  # type: ignore
     def from_dict(cls, data: dict[str, Any], user_id: int) -> "Word":
         data["word"] = data["word"].lower()
         return cls(**data, user_id=user_id)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "word": self.word,
+            "translation": self.translation,
+            "examples": self.examples,
+            "synonyms": self.synonyms,
+            "rank": self.rank,
+            "rank_range": self.rank_range,
+            "level": self.level,
+            "frequency": self.frequency,
+            "frequency_group": self.frequency_group,
+            "category": self.category,
+            "type": self.type,
+            "is_phrasal": self.is_phrasal,
+            "is_idiom": self.is_idiom,
+            "is_learned": self.is_learned,
+            "created_at": self.created_at,
+        }

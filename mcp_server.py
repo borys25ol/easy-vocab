@@ -5,9 +5,11 @@ from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_request
 from fastmcp.server.middleware import Middleware, MiddlewareContext
+from sqlmodel import select
 
 from app.core.config import settings
 from app.core.database import get_session
+from app.models.user import User
 from app.models.word import Word
 from app.services.genai_service import get_usage_examples
 
@@ -19,16 +21,19 @@ class UserAuthMiddleware(Middleware):
         """Validate token in headers or query params before tool execution."""
         request = get_http_request()
 
-        auth_header = request.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header[7:]
-        elif auth_header:
-            token = auth_header
-        else:
-            token = None
+        token = request.headers.get("EASY_VOCAB_API_KEY")
 
-        if not token or token != settings.MCP_API_KEY:
+        if not token:
             raise ToolError("Access denied: Invalid or missing token")
+
+        with next(get_session()) as session:
+            statement = select(User).where(User.mcp_api_key == token)
+            user = session.exec(statement).first()
+
+        if not user:
+            raise ToolError("Access denied: Invalid or missing token")
+
+        request.state.user = user
 
         return await call_next(context)
 
@@ -50,27 +55,23 @@ def add_word(word: str) -> dict:
         Dictionary with the created word details including translation and examples
     """
     try:
+        request = get_http_request()
+        user = getattr(request.state, "user", None)
+        if not user or user.id is None:
+            raise ToolError("Access denied: Invalid or missing token")
+
         word_info = get_usage_examples(word=word.lower())
 
         with next(get_session()) as session:
-            new_word = Word.from_dict(data=word_info)
+            new_word = Word.from_dict(
+                data=word_info,
+                user_id=user.id,
+            )
             session.add(new_word)
             session.commit()
             session.refresh(new_word)
 
-            return {
-                "id": new_word.id,
-                "word": new_word.word,
-                "translation": new_word.translation,
-                "level": new_word.level,
-                "category": new_word.category,
-                "type": new_word.type,
-                "examples": new_word.examples,
-                "synonyms": new_word.synonyms,
-                "is_phrasal": new_word.is_phrasal,
-                "is_idiom": new_word.is_idiom,
-                "is_learned": new_word.is_learned,
-            }
+            return new_word.to_dict()
     except Exception as e:
         return {"error": str(e)}
 

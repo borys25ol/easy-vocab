@@ -224,7 +224,6 @@ POSTGRES_PORT=5432
 SECRET_KEY=your_secure_secret_key
 
 # MCP Configuration
-MCP_API_KEY=your_secure_mcp_key
 MCP_PORT=6432
 MCP_HOST=0.0.0.0
 ```

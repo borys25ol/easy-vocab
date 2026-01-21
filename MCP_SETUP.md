@@ -26,7 +26,7 @@ To use this MCP server add this configuration to your config file:
    - **AI & APIs**: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`
    - **Database**: `POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`
    - **Security & Authentication**: `SECRET_KEY`
-   - **MCP Configuration**: `MCP_API_KEY`, `MCP_PORT`, `MCP_HOST`
+   - **MCP Configuration**: `MCP_PORT`, `MCP_HOST`
 
 3. **Set up PostgreSQL database:**
    - **Option A - Local Docker:**
@@ -99,6 +99,26 @@ Can you add the idiom "break the ice"?
 - **Port**: Configurable via `.env` (default: `6432`)
 - **Framework**: FastMCP
 - **Database**: PostgreSQL (shared with main app)
+
+## MCP API Keys
+
+Each user has a unique MCP API key generated via CLI. Pass it in the
+`EASY_VOCAB_API_KEY` header for MCP requests.
+
+### Create a user (prints key once)
+```bash
+python manage.py create-user --username <name> --password <password>
+```
+
+### Rotate a user's MCP key
+```bash
+python manage.py rotate-mcp-key --username <name>
+```
+
+### Backfill keys for existing users
+```bash
+python manage.py backfill-mcp-keys
+```
 
 ## Troubleshooting
 
