@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from app.core.config import settings
 from app.schemas.llm import LlmResponse
+from app.schemas.word import WordInfo
 
 
 SYSTEM_PROMPT = """You are an English lexicography and corpus linguistics expert.
@@ -125,7 +126,7 @@ def _build_models() -> list[str]:
     return models
 
 
-def get_usage_examples(word: str) -> dict:
+def get_usage_examples(word: str) -> WordInfo:
     """
     Retrieves usage examples, synonyms, and additional metadata for a given word
     from an external language model API via OpenRouter.
@@ -154,21 +155,21 @@ def get_usage_examples(word: str) -> dict:
                 )
                 content = response.choices[0].message.content or ""
                 parsed = _parse_response(content)
-                return {
-                    "word": parsed.word,
-                    "rank": parsed.rank,
-                    "rank_range": parsed.rank_range,
-                    "translation": parsed.translation,
-                    "category": parsed.category,
-                    "level": parsed.level,
-                    "type": parsed.type,
-                    "frequency": parsed.frequency,
-                    "frequency_group": parsed.frequency_group,
-                    "examples": _build_examples(parsed),
-                    "is_phrasal": parsed.is_phrasal,
-                    "is_idiom": parsed.is_idiom,
-                    "synonyms": _format_synonyms(parsed),
-                }
+                return WordInfo(
+                    word=parsed.word,
+                    rank=parsed.rank,
+                    rank_range=parsed.rank_range,
+                    translation=parsed.translation,
+                    category=parsed.category,
+                    level=parsed.level,
+                    type=parsed.type,
+                    frequency=parsed.frequency,
+                    frequency_group=parsed.frequency_group,
+                    examples=_build_examples(parsed),
+                    is_phrasal=parsed.is_phrasal,
+                    is_idiom=parsed.is_idiom,
+                    synonyms=_format_synonyms(parsed),
+                )
             except (
                 APITimeoutError,
                 APIConnectionError,

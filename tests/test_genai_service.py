@@ -91,10 +91,10 @@ def test_get_usage_examples_success(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = genai_service.get_usage_examples("house")
 
-    assert result["word"] == "house"
-    assert result["translation"] == "будинок"
-    assert result["synonyms"] == "home, dwelling"
-    assert result["examples"] == "(noun) A house is big."
+    assert result.word == "house"
+    assert result.translation == "будинок"
+    assert result.synonyms == "home, dwelling"
+    assert result.examples == "(noun) A house is big."
 
 
 def test_get_usage_examples_retries_on_validation(
@@ -115,7 +115,7 @@ def test_get_usage_examples_retries_on_validation(
     result = genai_service.get_usage_examples("house")
 
     assert calls["count"] == 2
-    assert result["level"] == "A1"
+    assert result.level == "A1"
 
 
 def test_get_usage_examples_fallback_model(
@@ -139,7 +139,7 @@ def test_get_usage_examples_fallback_model(
     result = genai_service.get_usage_examples("house")
 
     assert models_used == ["google/gemini-2.5-flash", "google/gemini-2.5-pro"]
-    assert result["word"] == "house"
+    assert result.word == "house"
 
 
 def test_get_usage_examples_failure(monkeypatch: pytest.MonkeyPatch) -> None:

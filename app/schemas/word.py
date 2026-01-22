@@ -39,3 +39,21 @@ class WordRead(BaseModel):
     is_idiom: bool
     is_learned: bool
     created_at: datetime.datetime
+
+
+class WordInfo(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    word: str
+    rank: int
+    rank_range: str
+    translation: str
+    category: str
+    level: str
+    type: str
+    frequency: int
+    frequency_group: str
+    examples: str | None
+    is_phrasal: bool
+    is_idiom: bool
+    synonyms: str | None

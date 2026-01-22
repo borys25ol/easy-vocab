@@ -2,6 +2,26 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from app.schemas.word import WordInfo
+
+
+def make_word_info(word: str = "testword") -> WordInfo:
+    return WordInfo(
+        word=word,
+        rank=100,
+        rank_range="1-500",
+        translation="тест",
+        category="Nouns",
+        level="A1",
+        type="word",
+        frequency=5,
+        frequency_group="Core",
+        examples="Example 1",
+        is_phrasal=False,
+        is_idiom=False,
+        synonyms="test1, test2",
+    )
+
 
 def test_read_words_empty(auth_client: TestClient) -> None:
     response = auth_client.get("/words/")
@@ -15,23 +35,11 @@ def test_unauthorized_access(client: TestClient) -> None:
 
 
 def test_create_word(auth_client: TestClient) -> None:
-    mock_data = {
-        "rank": 100,
-        "rank_range": "1-500",
-        "translation": "тест",
-        "category": "Nouns",
-        "level": "A1",
-        "type": "word",
-        "frequency": 5,
-        "frequency_group": "Core",
-        "examples": "Example 1",
-        "is_phrasal": False,
-        "is_idiom": False,
-        "synonyms": "test1, test2",
-    }
-
     # Patch where it is imported in the endpoint module
-    with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("testword"),
+    ):
         response = auth_client.post("/words/", json={"word": "TestWord"})
 
     assert response.status_code == 200
@@ -42,22 +50,10 @@ def test_create_word(auth_client: TestClient) -> None:
 
 
 def test_create_and_read_word(auth_client: TestClient) -> None:
-    mock_data = {
-        "rank": 100,
-        "rank_range": "1-500",
-        "translation": "тест",
-        "category": "Nouns",
-        "level": "A1",
-        "type": "word",
-        "frequency": 5,
-        "frequency_group": "Core",
-        "examples": "Example 1",
-        "is_phrasal": False,
-        "is_idiom": False,
-        "synonyms": "test1, test2",
-    }
-
-    with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("testword"),
+    ):
         auth_client.post("/words/", json={"word": "TestWord"})
 
     response = auth_client.get("/words/")
@@ -74,23 +70,11 @@ def test_user_cannot_see_other_users_words(
     auth_client: TestClient, auth_client_2: TestClient
 ) -> None:
     """Test that user 1 cannot see words created by user 2."""
-    mock_data = {
-        "rank": 100,
-        "rank_range": "1-500",
-        "translation": "тест",
-        "category": "Nouns",
-        "level": "A1",
-        "type": "word",
-        "frequency": 5,
-        "frequency_group": "Core",
-        "examples": "Example 1",
-        "is_phrasal": False,
-        "is_idiom": False,
-        "synonyms": "test1, test2",
-    }
-
     # User 1 creates a word
-    with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("useroneword"),
+    ):
         response = auth_client.post("/words/", json={"word": "UserOneWord"})
     assert response.status_code == 200
 
@@ -109,23 +93,11 @@ def test_user_cannot_delete_other_users_words(
     auth_client: TestClient, auth_client_2: TestClient
 ) -> None:
     """Test that user 2 cannot delete words created by user 1."""
-    mock_data = {
-        "rank": 100,
-        "rank_range": "1-500",
-        "translation": "тест",
-        "category": "Nouns",
-        "level": "A1",
-        "type": "word",
-        "frequency": 5,
-        "frequency_group": "Core",
-        "examples": "Example 1",
-        "is_phrasal": False,
-        "is_idiom": False,
-        "synonyms": "test1, test2",
-    }
-
     # User 1 creates a word
-    with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("protectedword"),
+    ):
         response = auth_client.post("/words/", json={"word": "ProtectedWord"})
     assert response.status_code == 200
     word_id = response.json()["id"]
@@ -143,23 +115,11 @@ def test_user_cannot_update_other_users_words(
     auth_client: TestClient, auth_client_2: TestClient
 ) -> None:
     """Test that user 2 cannot update words created by user 1."""
-    mock_data = {
-        "rank": 100,
-        "rank_range": "1-500",
-        "translation": "тест",
-        "category": "Nouns",
-        "level": "A1",
-        "type": "word",
-        "frequency": 5,
-        "frequency_group": "Core",
-        "examples": "Example 1",
-        "is_phrasal": False,
-        "is_idiom": False,
-        "synonyms": "test1, test2",
-    }
-
     # User 1 creates a word
-    with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("originalword"),
+    ):
         response = auth_client.post("/words/", json={"word": "OriginalWord"})
     assert response.status_code == 200
     word_id = response.json()["id"]
@@ -180,23 +140,11 @@ def test_user_cannot_toggle_other_users_words(
     auth_client: TestClient, auth_client_2: TestClient
 ) -> None:
     """Test that user 2 cannot toggle learned status on user 1's words."""
-    mock_data = {
-        "rank": 100,
-        "rank_range": "1-500",
-        "translation": "тест",
-        "category": "Nouns",
-        "level": "A1",
-        "type": "word",
-        "frequency": 5,
-        "frequency_group": "Core",
-        "examples": "Example 1",
-        "is_phrasal": False,
-        "is_idiom": False,
-        "synonyms": "test1, test2",
-    }
-
     # User 1 creates a word
-    with patch("app.api.endpoints.words.get_usage_examples", return_value=mock_data):
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("learnme"),
+    ):
         response = auth_client.post("/words/", json={"word": "LearnMe"})
     assert response.status_code == 200
     word_id = response.json()["id"]

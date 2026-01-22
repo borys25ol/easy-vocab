@@ -6,6 +6,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from app.models.user import User
+    from app.schemas.word import WordInfo
 
 
 class Word(SQLModel, table=True):  # type: ignore
@@ -34,9 +35,10 @@ class Word(SQLModel, table=True):  # type: ignore
     user: "User" = Relationship(back_populates="words")
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any], user_id: int) -> "Word":
-        data["word"] = data["word"].lower()
-        return cls(**data, user_id=user_id)
+    def from_dict(cls, data: "WordInfo", user_id: int) -> "Word":
+        clean_data = data.model_dump()
+        clean_data["word"] = clean_data["word"].lower()
+        return cls(**clean_data, user_id=user_id)
 
     def to_dict(self) -> dict[str, Any]:
         return {

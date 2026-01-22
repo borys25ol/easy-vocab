@@ -4,7 +4,7 @@ from typing import Any, cast
 from sqlmodel import Session, select, true
 
 from app.models.word import Word
-from app.schemas.word import WordUpdate
+from app.schemas.word import WordInfo, WordUpdate
 
 
 class WordRepository:
@@ -33,24 +33,24 @@ class WordRepository:
         session: Session,
         user_id: int,
         word_text: str,
-        word_info: dict[str, Any],
+        word_info: WordInfo,
     ) -> Word:
         """Create a word for a user from enriched metadata."""
         new_word = Word(
             user_id=user_id,
             word=word_text.lower(),
-            translation=word_info["translation"],
-            examples=word_info["examples"],
-            synonyms=word_info["synonyms"],
-            rank=word_info["rank"],
-            rank_range=word_info["rank_range"],
-            category=word_info["category"],
-            level=word_info["level"],
-            type=word_info["type"],
-            frequency=word_info["frequency"],
-            frequency_group=word_info["frequency_group"],
-            is_phrasal=word_info["is_phrasal"],
-            is_idiom=word_info["is_idiom"],
+            translation=word_info.translation,
+            examples=word_info.examples,
+            synonyms=word_info.synonyms,
+            rank=word_info.rank,
+            rank_range=word_info.rank_range,
+            category=word_info.category,
+            level=word_info.level,
+            type=word_info.type,
+            frequency=word_info.frequency,
+            frequency_group=word_info.frequency_group,
+            is_phrasal=word_info.is_phrasal,
+            is_idiom=word_info.is_idiom,
         )
         session.add(new_word)
         session.commit()
