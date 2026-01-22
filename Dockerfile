@@ -1,25 +1,27 @@
 # ========================================
 # Stage 1: Builder
 # ========================================
-FROM python:3.12-slim AS builder
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0
 
 # Set working directory
-WORKDIR /build
+WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies first for caching
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
 
-# Create virtual environment
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Copy application code
+COPY . /app
 
-# Copy and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# Install project and runtime dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
 
 # ========================================
 # Stage 2: Runtime
@@ -39,24 +41,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
-# Copy Python packages from builder
-COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv
+# Copy application (including venv)
+COPY --from=builder --chown=appuser:appuser /app /app
 
 # Set PATH
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Copy application code
-COPY --chown=appuser:appuser . .
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Change to non-root user
 USER appuser
 
 # Expose ports
 EXPOSE 5000 6432
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:5000/ || exit 1
 
 # Default command (overridden in docker-compose)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "5000"]

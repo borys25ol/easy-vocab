@@ -90,7 +90,7 @@ This approach allowed for rapid iteration while focusing on delivering an excell
 
 3. **Install dependencies**:
     ```bash
-    pip install -r requirements.txt
+    uv sync --all-groups
     ```
 
 4. **Configure Environment Variables**:
@@ -227,7 +227,7 @@ This project includes an **MCP (Model Context Protocol) server** that allows AI 
 
 ### Installation
 
-MCP requires the `fastmcp` package (already in `requirements.txt`):
+MCP requires the `fastmcp` package (already in `pyproject.toml`):
 
 ```bash
 pip install fastmcp
@@ -283,7 +283,7 @@ EasyVocab uses a **multi-stage Docker build** for optimal image size and securit
 - Base: `python:3.12-slim`
 - Installs build dependencies (gcc, libpq-dev)
 - Creates virtual environment at `/opt/venv`
-- Installs Python packages from `requirements.txt`
+- Installs Python packages using `uv sync`
 
 **Stage 2: Runtime**
 - Base: `python:3.12-slim`

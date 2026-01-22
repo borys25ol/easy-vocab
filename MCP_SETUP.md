@@ -19,7 +19,7 @@ To use this MCP server add this configuration to your config file:
 
 1. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
+   uv sync --all-groups
    ```
 
 2. **Set up environment variables** in `.env` file:
@@ -131,7 +131,7 @@ uv run python -m scripts.add_user_mcp_api_key
 ### Server won't start
 - Ensure `.env` file exists with all required variables
 - Check PostgreSQL is running and accessible
-- Verify dependencies are installed: `pip install -r requirements.txt`
+- Verify dependencies are installed: `uv sync --all-groups`
 
 ### Database connection errors
 - Check PostgreSQL credentials in `.env`
