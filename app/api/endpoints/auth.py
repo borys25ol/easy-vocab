@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, Form, Request, Response, status
@@ -13,7 +14,8 @@ from app.repositories.user import UserRepository
 
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+templates_dir = Path(__file__).resolve().parents[2] / "templates"
+templates = Jinja2Templates(directory=str(templates_dir))
 
 
 @router.get("/login", response_class=HTMLResponse)

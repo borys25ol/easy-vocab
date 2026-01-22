@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
@@ -7,7 +9,8 @@ from app.models.user import User
 
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+templates_dir = Path(__file__).resolve().parents[2] / "templates"
+templates = Jinja2Templates(directory=str(templates_dir))
 
 
 @router.get("/", response_class=HTMLResponse)
