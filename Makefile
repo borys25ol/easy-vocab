@@ -11,6 +11,9 @@ clean:
 runserver:
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 5000
 
+run-mcp:
+	python -m mcp_service.server
+
 db-upgrade:
 	alembic upgrade head
 

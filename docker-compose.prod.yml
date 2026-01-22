@@ -32,7 +32,7 @@ services:
     build: .
     container_name: easyvocab-mcp
     user: "1000:1000"
-    command: python mcp_server.py
+    command: python -m mcp_service.server
     env_file:
       - .env.production
     ports:

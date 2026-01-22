@@ -39,7 +39,7 @@ To use this MCP server add this configuration to your config file:
 
 ### Local Development
 ```bash
-python mcp_server.py
+python -m mcp_service.server
 ```
 
 The server will start on `http://0.0.0.0:6432`
@@ -147,7 +147,7 @@ uv run python -m scripts.add_user_mcp_api_key
 ### View Logs
 ```bash
 # Local
-python mcp_server.py
+python -m mcp_service.server
 
 # Docker
 docker-compose logs -f mcp

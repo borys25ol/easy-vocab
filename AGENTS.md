@@ -27,7 +27,7 @@ easy-words-learning/
 │   └── main.py          # Application entry point
 ├── templates/           # Jinja2 HTML templates
 ├── static/              # CSS, JS, assets
-├── mcp_server.py        # MCP server (FastMCP)
+├── mcp_service/        # MCP server package
 ├── tests/               # Pytest test suite
 ├── Dockerfile            # Multi-stage Docker image (builder + runtime)
 ├── docker-compose.yml    # Local development with PostgreSQL
@@ -85,7 +85,7 @@ docker-compose up  # Start all services (web, mcp, postgres)
 ### Running the App
 ```bash
 make runserver    # FastAPI on http://0.0.0.0:5000
-python mcp_server.py  # MCP server on http://localhost:6432
+python -m mcp_service.server  # MCP server on http://localhost:6432
 ```
 
 ### Docker Deployment
@@ -193,7 +193,7 @@ Allows AI assistants to add words directly to the database via MCP protocol.
 
 ### Usage
 ```bash
-python mcp_server.py  # Server starts on http://localhost:6432
+python -m mcp_service.server  # Server starts on http://localhost:6432
 ```
 
 ### Tool Signature

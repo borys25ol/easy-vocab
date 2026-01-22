@@ -236,7 +236,7 @@ pip install fastmcp
 ### Running the MCP Server
 
 ```bash
-python mcp_server.py
+python -m mcp_service.server
 ```
 
 The server will start on `http://localhost:6432`
