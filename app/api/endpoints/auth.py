@@ -24,6 +24,7 @@ async def login_page(request: Request) -> HTMLResponse:
 
 @router.post("/login")
 async def login(
+    request: Request,
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_session),
@@ -33,10 +34,12 @@ async def login(
     user = user_repo.get_by_username(session=db, username=username)
 
     if not user or not verify_password(password, user.hashed_password):
-        # In a real app, you'd pass an error message back to the template
-        return RedirectResponse(
-            url="/login?error=Invalid+credentials",
-            status_code=status.HTTP_303_SEE_OTHER,
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {
+                "error": "Invalid credentials",
+            },
         )
 
     access_token = create_access_token(subject=user.username)
@@ -62,7 +65,7 @@ async def login(
 
 @router.get("/logout")
 async def logout() -> RedirectResponse:
-    """Clear session cookie and redirect to login."""
+    """Clear the session cookie and redirect to the login."""
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     samesite = cast(
         Literal["lax", "strict", "none"] | None,

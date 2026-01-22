@@ -18,53 +18,59 @@
 
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 
-    <div class="max-w-md w-full">
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-black text-slate-800 tracking-tight italic">EASY <span
-                    class="text-indigo-600">VOCAB</span></h1>
-            <p class="text-slate-500 mt-2 font-medium">Please sign in to continue</p>
-        </div>
-
-        <div class="glass p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
-            <form action="/login" method="POST" class="space-y-6">
-                <div>
-                    <label for="username" class="block text-sm font-bold text-slate-700 mb-2">Username</label>
-                    <input type="text" id="username" name="username" required
-                        class="w-full p-4 outline-none focus:ring-2 ring-indigo-500 rounded-2xl bg-slate-50 border border-slate-100 transition-all"
-                        placeholder="Enter your username">
-                </div>
-
-                <div>
-                    <label for="password" class="block text-sm font-bold text-slate-700 mb-2">Password</label>
-                    <input type="password" id="password" name="password" required
-                        class="w-full p-4 outline-none focus:ring-2 ring-indigo-500 rounded-2xl bg-slate-50 border border-slate-100 transition-all"
-                        placeholder="••••••••">
-                </div>
-
-                <div id="error-container" class="hidden">
-                    <p class="text-red-500 text-sm font-medium text-center" id="error-message"></p>
-                </div>
-
-                <button type="submit"
-                    class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 transform hover:-translate-y-0.5 active:translate-y-0">
-                    Sign In
-                </button>
-            </form>
-        </div>
-
-        <p class="text-center text-slate-400 text-xs mt-8 font-medium italic">
-            &copy; 2026 English Learner PRO
-        </p>
+<div class="max-w-md w-full">
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-black text-slate-800 tracking-tight italic">EASY <span
+                class="text-indigo-600">VOCAB</span></h1>
+        <p class="text-slate-500 mt-2 font-medium">Please sign in to continue</p>
     </div>
 
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-        if (error) {
-            document.getElementById('error-container').classList.remove('hidden');
-            document.getElementById('error-message').innerText = error;
-        }
-    </script>
+    <div class="glass p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+        <form action="/login" method="POST" class="space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-bold text-slate-700 mb-2">Username</label>
+                <input type="text" id="username" name="username" required
+                       class="w-full p-4 outline-none focus:ring-2 ring-indigo-500 rounded-2xl bg-slate-50 border border-slate-100 transition-all"
+                       placeholder="Enter your username">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-bold text-slate-700 mb-2">Password</label>
+                <input type="password" id="password" name="password" required
+                       class="w-full p-4 outline-none focus:ring-2 ring-indigo-500 rounded-2xl bg-slate-50 border border-slate-100 transition-all"
+                       placeholder="••••••••">
+            </div>
+
+            {% if error %}
+            <div id="error-container">
+                <p class="text-red-500 text-sm font-medium text-center">{{ error }}</p>
+            </div>
+            {% else %}
+            <div id="error-container" class="hidden">
+                <p class="text-red-500 text-sm font-medium text-center" id="error-message"></p>
+            </div>
+            {% endif %}
+
+            <button type="submit"
+                    class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 transform hover:-translate-y-0.5 active:translate-y-0">
+                Sign In
+            </button>
+        </form>
+    </div>
+
+    <p class="text-center text-slate-400 text-xs mt-8 font-medium italic">
+        &copy; 2026 English Learner PRO
+    </p>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+        document.getElementById('error-container').classList.remove('hidden');
+        document.getElementById('error-message').innerText = error;
+    }
+</script>
 </body>
 
 </html>
