@@ -1,12 +1,15 @@
+from typing import Literal, cast
+
 from fastapi import APIRouter, Depends, Form, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, select
+from sqlmodel import Session
 
+from app.api.deps import get_user_repository
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.security import create_access_token, verify_password
-from app.models.user import User
+from app.repositories.user import UserRepository
 
 
 router = APIRouter()
@@ -15,18 +18,19 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request) -> HTMLResponse:
+    """Render the login page."""
     return templates.TemplateResponse(request, "login.html")
 
 
 @router.post("/login")
 async def login(
-    response: Response,
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_session),
+    user_repo: UserRepository = Depends(get_user_repository),
 ) -> Response:
-    statement = select(User).where(User.username == username)
-    user = db.exec(statement).first()
+    """Authenticate user and set session cookie."""
+    user = user_repo.get_by_username(session=db, username=username)
 
     if not user or not verify_password(password, user.hashed_password):
         # In a real app, you'd pass an error message back to the template
@@ -36,6 +40,10 @@ async def login(
         )
 
     access_token = create_access_token(subject=user.username)
+    samesite = cast(
+        Literal["lax", "strict", "none"] | None,
+        settings.SESSION_COOKIE_SAMESITE,
+    )
 
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
@@ -44,7 +52,7 @@ async def login(
         httponly=True,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite=settings.SESSION_COOKIE_SAMESITE,
+        samesite=samesite,
         secure=settings.SESSION_COOKIE_SECURE,
         path=settings.COOKIE_PATH,
         domain=settings.COOKIE_DOMAIN,
@@ -54,12 +62,17 @@ async def login(
 
 @router.get("/logout")
 async def logout() -> RedirectResponse:
+    """Clear session cookie and redirect to login."""
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+    samesite = cast(
+        Literal["lax", "strict", "none"] | None,
+        settings.SESSION_COOKIE_SAMESITE,
+    )
     response.delete_cookie(
         settings.SESSION_COOKIE_NAME,
         path=settings.COOKIE_PATH,
         domain=settings.COOKIE_DOMAIN,
-        samesite=settings.SESSION_COOKIE_SAMESITE,
+        samesite=samesite,
         secure=settings.SESSION_COOKIE_SECURE,
     )
     return response

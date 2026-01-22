@@ -14,6 +14,7 @@ templates = Jinja2Templates(directory="templates")
 async def home_page(
     request: Request, user: User | Response = Depends(require_user_or_redirect)
 ) -> Response:
+    """Render the main dashboard page."""
     if isinstance(user, Response):
         return user
     return templates.TemplateResponse(request, "index.html", {"user": user})
@@ -23,6 +24,7 @@ async def home_page(
 async def quiz_page(
     request: Request, user: User | Response = Depends(require_user_or_redirect)
 ) -> Response:
+    """Render the quiz page."""
     if isinstance(user, Response):
         return user
     return templates.TemplateResponse(request, "quiz.html", {"user": user})
@@ -32,6 +34,7 @@ async def quiz_page(
 async def quiz_translate_page(
     request: Request, user: User | Response = Depends(require_user_or_redirect)
 ) -> Response:
+    """Render the translation quiz page."""
     if isinstance(user, Response):
         return user
     return templates.TemplateResponse(request, "quiz_translate.html", {"user": user})
@@ -41,6 +44,7 @@ async def quiz_translate_page(
 async def flashcards_page(
     request: Request, user: User | Response = Depends(require_user_or_redirect)
 ) -> Response:
+    """Render the flashcards page."""
     if isinstance(user, Response):
         return user
     return templates.TemplateResponse(request, "flashcards.html", {"user": user})
@@ -50,6 +54,7 @@ async def flashcards_page(
 async def phrasal_page(
     request: Request, user: User | Response = Depends(require_user_or_redirect)
 ) -> Response:
+    """Render the phrasal verbs page."""
     if isinstance(user, Response):
         return user
     return templates.TemplateResponse(request, "phrasal_verbs.html", {"user": user})
@@ -59,6 +64,7 @@ async def phrasal_page(
 async def idioms_page(
     request: Request, user: User | Response = Depends(require_user_or_redirect)
 ) -> Response:
+    """Render the idioms page."""
     if isinstance(user, Response):
         return user
     return templates.TemplateResponse(request, "idioms.html", {"user": user})

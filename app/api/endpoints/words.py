@@ -1,12 +1,13 @@
 from collections.abc import Sequence
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select, true
+from sqlmodel import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_word_repository
 from app.core.database import get_session
 from app.models.user import User
 from app.models.word import Word
+from app.repositories.word import WordRepository
 from app.schemas.word import WordCreate, WordRead, WordUpdate
 from app.services.genai_service import get_usage_examples
 
@@ -14,25 +15,21 @@ from app.services.genai_service import get_usage_examples
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-def get_user_word(word_id: int, user_id: int, session: Session) -> Word:
-    """Helper to get a word that belongs to the specified user."""
-    db_word = session.get(entity=Word, ident=word_id)
-    if not db_word or db_word.user_id != user_id:
-        raise HTTPException(status_code=404, detail="Word not found")
-    return db_word
+def _require_user_id(user: User) -> int:
+    if user.id is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user.id
 
 
 @router.get("", response_model=Sequence[WordRead])
 def get_words(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    word_repo: WordRepository = Depends(get_word_repository),
 ) -> Sequence[Word]:
-    statement = (
-        select(Word)
-        .where(Word.user_id == current_user.id)
-        .order_by(Word.created_at.desc())  # type: ignore
-    )
-    return session.exec(statement).all()
+    """List all words for the current user."""
+    user_id = _require_user_id(current_user)
+    return word_repo.list_for_user(session=session, user_id=user_id)
 
 
 @router.post("", response_model=WordRead)
@@ -40,54 +37,31 @@ def create_word(
     word_in: WordCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    word_repo: WordRepository = Depends(get_word_repository),
 ) -> Word:
+    """Create a new word with AI enrichment."""
+    user_id = _require_user_id(current_user)
     word_text = word_in.word
     word_info = get_usage_examples(word=word_text)
-
-    new_word = Word(
-        user_id=current_user.id,  # pyright: ignore[reportArgumentType]
-        word=word_text.lower(),
-        translation=word_info["translation"],
-        examples=word_info["examples"],
-        synonyms=word_info["synonyms"],
-        rank=word_info["rank"],
-        rank_range=word_info["rank_range"],
-        category=word_info["category"],
-        level=word_info["level"],
-        type=word_info["type"],
-        frequency=word_info["frequency"],
-        frequency_group=word_info["frequency_group"],
-        is_phrasal=word_info["is_phrasal"],
-        is_idiom=word_info["is_idiom"],
+    return word_repo.create_for_user(
+        session=session,
+        user_id=user_id,
+        word_text=word_text,
+        word_info=word_info,
     )
-    session.add(new_word)
-    session.commit()
-    session.refresh(new_word)
-    return new_word
 
 
 @router.get("/phrasal_roots")
 def get_phrasal_roots(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    word_repo: WordRepository = Depends(get_word_repository),
 ) -> list[str]:
     """
     Extracts unique roots ONLY from words marked as is_phrasal for current user.
     """
-    statement = (
-        select(Word)
-        .where(Word.user_id == current_user.id)
-        .where(Word.is_phrasal == true())
-    )
-    phrasal_verbs = session.exec(statement).all()
-
-    roots = set()
-    for v in phrasal_verbs:
-        parts = v.word.split()
-        if parts:
-            roots.add(parts[0].strip().capitalize())
-
-    return sorted(roots)
+    user_id = _require_user_id(current_user)
+    return word_repo.list_phrasal_roots(session=session, user_id=user_id)
 
 
 @router.get("/phrasal/{root}", response_model=Sequence[WordRead])
@@ -95,35 +69,30 @@ def get_phrasal_verbs(
     root: str,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    word_repo: WordRepository = Depends(get_word_repository),
 ) -> Sequence[Word]:
     """
     Fetches phrasal verbs by root and strict is_phrasal flag for current user.
     """
-    search_pattern = f"{root.lower()} %"
-    statement = (
-        select(Word)
-        .where(Word.user_id == current_user.id)
-        .where(Word.word.like(search_pattern))  # type: ignore
-        .where(Word.is_phrasal == true())
+    user_id = _require_user_id(current_user)
+    return word_repo.list_phrasal_verbs(
+        session=session,
+        user_id=user_id,
+        root=root,
     )
-    return session.exec(statement).all()
 
 
 @router.get("/idioms", response_model=Sequence[WordRead])
 def get_idioms(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    word_repo: WordRepository = Depends(get_word_repository),
 ) -> Sequence[Word]:
     """
     Fetches all words marked as idioms for current user.
     """
-    statement = (
-        select(Word)
-        .where(Word.user_id == current_user.id)
-        .where(Word.is_idiom == true())
-        .order_by(Word.created_at.desc())  # type: ignore
-    )
-    return session.exec(statement).all()
+    user_id = _require_user_id(current_user)
+    return word_repo.list_idioms(session=session, user_id=user_id)
 
 
 @router.put("/{word_id}", response_model=WordRead)
@@ -132,20 +101,22 @@ def update_word(
     word_update: WordUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    word_repo: WordRepository = Depends(get_word_repository),
 ) -> Word:
-    db_word = get_user_word(word_id, current_user.id, session)  # type: ignore
-
-    if word_update.word is not None:
-        db_word.word = word_update.word
-    if word_update.translation is not None:
-        db_word.translation = word_update.translation
-    if word_update.category is not None:
-        db_word.category = word_update.category
-
-    session.add(db_word)
-    session.commit()
-    session.refresh(db_word)
-    return db_word
+    """Update editable fields for a word."""
+    user_id = _require_user_id(current_user)
+    db_word = word_repo.get_by_id_for_user(
+        session=session,
+        word_id=word_id,
+        user_id=user_id,
+    )
+    if not db_word:
+        raise HTTPException(status_code=404, detail="Word not found")
+    return word_repo.update_word(
+        session=session,
+        word=db_word,
+        word_update=word_update,
+    )
 
 
 @router.delete("/{word_id}")
@@ -153,10 +124,18 @@ def delete_word(
     word_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    word_repo: WordRepository = Depends(get_word_repository),
 ) -> dict[str, str]:
-    db_word = get_user_word(word_id, current_user.id, session)  # type: ignore
-    session.delete(db_word)
-    session.commit()
+    """Delete a word owned by the current user."""
+    user_id = _require_user_id(current_user)
+    db_word = word_repo.get_by_id_for_user(
+        session=session,
+        word_id=word_id,
+        user_id=user_id,
+    )
+    if not db_word:
+        raise HTTPException(status_code=404, detail="Word not found")
+    word_repo.delete_word(session=session, word=db_word)
     return {"message": "Deleted successfully"}
 
 
@@ -165,10 +144,15 @@ def toggle_learned(
     word_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    word_repo: WordRepository = Depends(get_word_repository),
 ) -> Word:
-    db_word = get_user_word(word_id, current_user.id, session)  # type: ignore
-    db_word.is_learned = not db_word.is_learned
-    session.add(db_word)
-    session.commit()
-    session.refresh(db_word)
-    return db_word
+    """Toggle the learned flag for a word."""
+    user_id = _require_user_id(current_user)
+    db_word = word_repo.get_by_id_for_user(
+        session=session,
+        word_id=word_id,
+        user_id=user_id,
+    )
+    if not db_word:
+        raise HTTPException(status_code=404, detail="Word not found")
+    return word_repo.toggle_learned(session=session, word=db_word)
