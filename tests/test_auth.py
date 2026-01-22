@@ -28,8 +28,8 @@ def test_login_failure(client: TestClient, test_user: User) -> None:
         data={"username": test_user.username, "password": "wrongpassword"},
         follow_redirects=False,
     )
-    assert response.status_code == status.HTTP_303_SEE_OTHER
-    assert "/login?error=" in response.headers["location"]
+    assert response.status_code == status.HTTP_200_OK
+    assert "Invalid credentials" in response.text
     assert settings.SESSION_COOKIE_NAME not in response.cookies
 
 
