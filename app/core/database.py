@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from contextlib import contextmanager
 
 from sqlmodel import Session, SQLModel, create_engine
 
@@ -27,3 +28,12 @@ def create_db_and_tables() -> None:
 def get_session() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
+
+
+@contextmanager
+def session_scope() -> Generator[Session, None, None]:
+    session = Session(engine)
+    try:
+        yield session
+    finally:
+        session.close()

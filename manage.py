@@ -4,7 +4,7 @@ import sys
 import click
 from sqlmodel import select
 
-from app.core.database import get_session
+from app.core.database import session_scope
 from app.core.security import get_password_hash
 from app.models.user import User
 from app.models.word import Word  # noqa
@@ -22,7 +22,7 @@ def generate_mcp_api_key() -> str:
 
 def create_user(username: str, password: str) -> None:
     """Create a new user and print the generated MCP API key."""
-    with next(get_session()) as session:
+    with session_scope() as session:
         statement = select(User).where(User.username == username)
         existing_user = session.exec(statement).first()
         if existing_user:
@@ -44,7 +44,7 @@ def create_user(username: str, password: str) -> None:
 
 def rotate_mcp_key(username: str) -> None:
     """Rotate the MCP API key for an existing user."""
-    with next(get_session()) as session:
+    with session_scope() as session:
         statement = select(User).where(User.username == username)
         user = session.exec(statement).first()
         if not user:
@@ -61,7 +61,7 @@ def rotate_mcp_key(username: str) -> None:
 
 def backfill_mcp_keys() -> None:
     """Generate MCP API keys for users missing one."""
-    with next(get_session()) as session:
+    with session_scope() as session:
         statement = select(User).where(User.mcp_api_key.is_(None))  # type: ignore
         users = session.exec(statement).all()
         if not users:

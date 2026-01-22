@@ -8,7 +8,7 @@ from fastmcp.server.middleware import Middleware, MiddlewareContext
 from sqlmodel import select
 
 from app.core.config import settings
-from app.core.database import get_session
+from app.core.database import session_scope
 from app.models.user import User
 from app.models.word import Word
 from app.services.genai_service import get_usage_examples
@@ -26,7 +26,7 @@ class UserAuthMiddleware(Middleware):
         if not token:
             raise ToolError("Access denied: Invalid or missing token")
 
-        with next(get_session()) as session:
+        with session_scope() as session:
             statement = select(User).where(User.mcp_api_key == token)
             user = session.exec(statement).first()
 
@@ -62,7 +62,7 @@ def add_word(word: str) -> dict:
 
         word_info = get_usage_examples(word=word.lower())
 
-        with next(get_session()) as session:
+        with session_scope() as session:
             new_word = Word.from_dict(
                 data=word_info,
                 user_id=user.id,
