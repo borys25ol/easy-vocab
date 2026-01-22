@@ -4,6 +4,19 @@ on:
   push:
     branches:
       - main
+    paths:
+      - app/**
+      - mcp_service/**
+      - migrations/**
+      - templates/**
+      - static/**
+      - Dockerfile
+      - docker-compose.prod.yml
+      - pyproject.toml
+      - uv.lock
+      - Makefile
+      - scripts/**
+  workflow_dispatch:
 
 jobs:
   deploy:
