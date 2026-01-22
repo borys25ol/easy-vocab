@@ -33,6 +33,15 @@ I am learning English words and phrases. Provide usage examples, translations, a
    - For phrases: provide 2-3 alternative phrases.
 4. "translation": Ukrainian language, comma-separated if multiple.
 5. "category": Choose from [Phrases, Verbs, Nouns, Adverbs, Adjectives, Idioms]. Use "General" if no match.
+6. "is_phrasal" is used ONLY for phrasal verbs without additional context:
+    - is_phrasal = true:
+        - take off
+        - pick up
+        - look forward to
+        - put up with
+    - is_phrasal = false
+        - look forward to seeing you soon
+        - take off your clothes
 
 ### FREQUENCY RULES:
 - WORDS: 1–500 (Core 500), 501–1000 (Core 1000), 1001–2000 (Core Plus), 2001–3000 (Active Basic), 3001–5000 (Active Extended), 5001–7000 (Fluent Core), 7001–10000 (Advanced), 10001–15000 (Academic), 15001–25000 (Rare), 25000+ (Obscure).
