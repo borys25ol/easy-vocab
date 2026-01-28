@@ -1,6 +1,8 @@
+import logging
 from collections.abc import Callable
 from typing import Any
 
+from fastapi import HTTPException
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_request
@@ -12,6 +14,9 @@ from app.core.database import session_scope
 from app.models.user import User
 from app.models.word import Word
 from app.services.genai_service import get_usage_examples
+
+
+logger = logging.getLogger(__name__)
 
 
 class UserAuthMiddleware(Middleware):
@@ -72,8 +77,13 @@ def add_word(word: str) -> dict:
             session.refresh(new_word)
 
             return new_word.to_dict()
-    except Exception as e:
-        return {"error": str(e)}
+    except ToolError:
+        raise
+    except HTTPException as e:
+        return {"error": e.detail}
+    except Exception:
+        logger.exception("Unexpected error adding word")
+        return {"error": "Failed to add word. Please try again."}
 
 
 if __name__ == "__main__":
