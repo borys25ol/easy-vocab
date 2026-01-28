@@ -31,7 +31,24 @@
     <div id="scrollSentinel" class="h-8"></div>
 </div>
 
+<div id="deleteModal" class="modal">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm mx-4 text-center">
+        <div
+                class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            🗑️
+        </div>
+        <h2 class="text-2xl font-bold mb-2">Delete?</h2>
+        <div class="flex gap-3 mt-6">
+            <button onclick="confirmDelete()" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold">Delete
+            </button>
+            <button onclick="closeModal('deleteModal')" class="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
+    let wordIdToDelete = null;
     let limit = 30;
     let offset = 0;
     let total = 0;
@@ -90,6 +107,23 @@
     async function toggleLearned(id) {
         await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
         loadIdioms({reset: true});
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    function requestDelete(id) {
+        wordIdToDelete = id;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    async function confirmDelete() {
+        if (wordIdToDelete) {
+            await fetch(`/words/${wordIdToDelete}`, {method: 'DELETE'});
+            closeModal('deleteModal');
+            loadIdioms({reset: true});
+        }
     }
 
     function setupObserver() {
