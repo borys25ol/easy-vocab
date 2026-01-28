@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/cards.css">
     <script src="/static/js/shared.js"></script>
+    <script src="/static/js/api.js"></script>
     <script src="/static/js/card-renderer.js"></script>
     <style>
         /* Only unique styles for phrasal verbs remain here */
@@ -117,8 +118,12 @@
 
     // Load available phrasal verb roots from the server
     async function refreshRoots() {
-        const response = await fetch('/words/phrasal_roots');
-        const roots = await response.json();
+        const {data, error} = await apiGet('/words/phrasal_roots');
+        if (error) {
+            showToast(error);
+            return;
+        }
+        const roots = data || [];
         const selector = document.getElementById('verbSelector');
 
         selector.innerHTML = '';
@@ -156,8 +161,11 @@
             const params = new URLSearchParams();
             params.set('limit', String(limit));
             params.set('offset', String(offset));
-            const response = await fetch(`/words/phrasal/${root}?${params.toString()}`);
-            const data = await response.json();
+            const {data, error} = await apiGet(`/words/phrasal/${root}?${params.toString()}`);
+            if (error) {
+                showToast(error);
+                return;
+            }
             const words = data.items || [];
             const list = document.getElementById('phrasalList');
 
@@ -193,18 +201,18 @@
         document.getElementById('btnSpinner').classList.remove('hidden');
 
         try {
-            const response = await fetch('/words', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({word})
-            });
-            if (response.status === 409) {
+            const {error, status} = await apiPost('/words', {word});
+            if (status === 409) {
                 duplicateError.classList.remove('hidden');
                 if (duplicateTimer) clearTimeout(duplicateTimer);
                 duplicateTimer = setTimeout(() => {
                     duplicateError.classList.add('hidden');
                     duplicateTimer = null;
                 }, 5000);
+                return;
+            }
+            if (error) {
+                showToast(error);
                 return;
             }
             duplicateError.classList.add('hidden');
@@ -239,11 +247,11 @@
         const id = document.getElementById('edit_id').value;
         const w = document.getElementById('edit_target').value;
         const t = document.getElementById('edit_translation').value;
-        await fetch(`/words/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({word: w, translation: t})
-        });
+        const {error} = await apiPut(`/words/${id}`, {word: w, translation: t});
+        if (error) {
+            showToast(error);
+            return;
+        }
         closeModal('editModal');
         if (currentRoot) loadPhrasal(currentRoot, {reset: true});
     }
@@ -255,7 +263,11 @@
 
     async function confirmDelete() {
         if (wordIdToDelete) {
-            await fetch(`/words/${wordIdToDelete}`, {method: 'DELETE'});
+            const {error} = await apiDelete(`/words/${wordIdToDelete}`);
+            if (error) {
+                showToast(error);
+                return;
+            }
             closeModal('deleteModal');
             await refreshRoots();
             if (currentRoot) loadPhrasal(currentRoot, {reset: true});
@@ -263,7 +275,11 @@
     }
 
     async function toggleLearned(id) {
-        await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
+        const {error} = await apiPatch(`/words/${id}/toggle_learned`);
+        if (error) {
+            showToast(error);
+            return;
+        }
         if (currentRoot) loadPhrasal(currentRoot, {reset: true});
     }
 

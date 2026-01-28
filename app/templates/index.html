@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/cards.css">
     <script src="/static/js/shared.js"></script>
+    <script src="/static/js/api.js"></script>
     <script src="/static/js/card-renderer.js"></script>
     <style>
         /* Only unique styles for index remain here */
@@ -330,8 +331,11 @@
             if (currentCategory !== 'All') params.set('category', currentCategory);
             if (currentLevel !== 'All') params.set('level', currentLevel);
 
-            const response = await fetch(`/words?${params.toString()}`);
-            const data = await response.json();
+            const {data, error} = await apiGet(`/words?${params.toString()}`);
+            if (error) {
+                showToast(error);
+                return;
+            }
             const words = data.items || [];
             const list = document.getElementById('wordsList');
             total = data.total || 0;
@@ -382,7 +386,11 @@
     }
 
     async function toggleLearned(id) {
-        await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
+        const {error} = await apiPatch(`/words/${id}/toggle_learned`);
+        if (error) {
+            showToast(error);
+            return;
+        }
         loadWords({reset: true});
     }
 
@@ -399,11 +407,11 @@
         const w = document.getElementById('edit_target').value;
         const t = document.getElementById('edit_translation').value;
         const c = document.getElementById('edit_category').value;
-        await fetch(`/words/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({word: w, translation: t, category: c})
-        });
+        const {error} = await apiPut(`/words/${id}`, {word: w, translation: t, category: c});
+        if (error) {
+            showToast(error);
+            return;
+        }
         closeModal('editModal');
         loadWords({reset: true});
     }
@@ -415,7 +423,11 @@
 
     async function confirmDelete() {
         if (wordIdToDelete) {
-            await fetch(`/words/${wordIdToDelete}`, {method: 'DELETE'});
+            const {error} = await apiDelete(`/words/${wordIdToDelete}`);
+            if (error) {
+                showToast(error);
+                return;
+            }
             closeModal('deleteModal');
             loadWords({reset: true});
         }
@@ -430,18 +442,18 @@
         document.getElementById('btnText').innerText = 'Searching...';
         document.getElementById('btnSpinner').classList.remove('hidden');
         try {
-            const response = await fetch('/words', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({word})
-            });
-            if (response.status === 409) {
+            const {error, status} = await apiPost('/words', {word});
+            if (status === 409) {
                 duplicateError.classList.remove('hidden');
                 if (duplicateTimer) clearTimeout(duplicateTimer);
                 duplicateTimer = setTimeout(() => {
                     duplicateError.classList.add('hidden');
                     duplicateTimer = null;
                 }, 5000);
+                return;
+            }
+            if (error) {
+                showToast(error);
                 return;
             }
             duplicateError.classList.add('hidden');

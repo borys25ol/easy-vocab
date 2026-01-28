@@ -67,3 +67,33 @@ function speak(text) {
     u.rate = 0.9;
     window.speechSynthesis.speak(u);
 }
+
+let toastTimer = null;
+
+function showToast(message, type = 'error') {
+    const existing = document.getElementById('toast-container');
+    const container = existing || (() => {
+        const el = document.createElement('div');
+        el.id = 'toast-container';
+        el.className = 'fixed top-4 right-4 z-50 flex flex-col gap-2';
+        document.body.appendChild(el);
+        return el;
+    })();
+
+    container.innerHTML = '';
+
+    const toast = document.createElement('div');
+    const baseClass = 'rounded-xl px-4 py-3 text-sm font-bold shadow-lg border';
+    const typeClass = type === 'error'
+        ? 'bg-red-50 text-red-600 border-red-200'
+        : 'bg-slate-50 text-slate-700 border-slate-200';
+    toast.className = `${baseClass} ${typeClass}`;
+    toast.innerText = message;
+    container.appendChild(toast);
+
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        container.innerHTML = '';
+        toastTimer = null;
+    }, 6000);
+}

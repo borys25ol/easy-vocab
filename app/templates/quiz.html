@@ -7,6 +7,8 @@
     <title>Smart Quiz — English Learner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/cards.css">
+    <script src="/static/js/shared.js"></script>
+    <script src="/static/js/api.js"></script>
     <style>
         .progress-bar {
             transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -57,8 +59,11 @@
     }
 
     async function initQuiz() {
-        const response = await fetch('/words');
-        const data = await response.json();
+        const {data, error} = await apiGet('/words');
+        if (error) {
+            showToast(error);
+            return;
+        }
         const items = data.items || [];
 
         // Filter out learned words for better practice

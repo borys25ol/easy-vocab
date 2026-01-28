@@ -8,6 +8,8 @@
     <title>Flashcards — English Learner PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/cards.css">
+    <script src="/static/js/shared.js"></script>
+    <script src="/static/js/api.js"></script>
     <style>
         .card-container {
             perspective: 1000px;
@@ -179,13 +181,16 @@
 
     async function initFlashcards() {
         try {
-            const response = await fetch('/words');
-            const data = await response.json();
+            const {data, error} = await apiGet('/words');
+            if (error) {
+                showToast(error);
+                return;
+            }
             const items = data.items || [];
             cards = items.sort((a, b) => (a.rank || 99999) - (b.rank || 99999));
             if (cards.length > 0) updateCard();
         } catch (e) {
-            console.error("Data error:", e);
+            showToast('Failed to load words. Please try again.');
         }
     }
 
@@ -269,10 +274,13 @@
 
     async function toggleLearnedStatus() {
         const word = cards[currentIndex];
-        const response = await fetch(`/words/${word.id}/toggle_learned`, {method: 'PATCH'});
-        if (response.ok) {
-            const updated = await response.json();
-            cards[currentIndex].is_learned = updated.is_learned;
+        const {data, error} = await apiPatch(`/words/${word.id}/toggle_learned`);
+        if (error) {
+            showToast(error);
+            return;
+        }
+        if (data) {
+            cards[currentIndex].is_learned = data.is_learned;
             updateCard();
         }
     }
