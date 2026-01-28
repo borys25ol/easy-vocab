@@ -73,6 +73,16 @@ class WordRepository:
         statement = self._apply_pagination(statement, limit=limit, offset=offset)
         return session.exec(statement).all()
 
+    def get_by_word_for_user(
+        self, session: Session, user_id: int, word_text: str
+    ) -> Word | None:
+        statement = (
+            select(Word)
+            .where(Word.user_id == user_id)
+            .where(Word.word == word_text.lower())
+        )
+        return session.exec(statement).first()
+
     def count_for_user(
         self,
         session: Session,

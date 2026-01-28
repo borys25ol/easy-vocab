@@ -171,6 +171,9 @@
                     <div id="btnSpinner" class="spinner hidden"></div>
                 </button>
             </form>
+            <div id="wordDuplicateError" class="hidden text-xs font-bold text-red-500 -mt-6 mb-6 pl-3">
+                Word already exists
+            </div>
 
             <!-- Navigation Buttons for Mobile -->
             <div class="md:hidden flex flex-wrap justify-center items-center px-2 mb-8 mt-8 gap-3">
@@ -304,6 +307,7 @@
     let isLoading = false;
     let allLoaded = false;
     let observer = null;
+    let duplicateTimer = null;
 
     // LOAD WORDS FROM API
     async function loadWords({reset = false} = {}) {
@@ -421,20 +425,36 @@
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         const word = document.getElementById('target_word').value;
+        const duplicateError = document.getElementById('wordDuplicateError');
         btn.disabled = true;
         document.getElementById('btnText').innerText = 'Searching...';
         document.getElementById('btnSpinner').classList.remove('hidden');
         try {
-            await fetch('/words', {
+            const response = await fetch('/words', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({word})
             });
+            if (response.status === 409) {
+                duplicateError.classList.remove('hidden');
+                if (duplicateTimer) clearTimeout(duplicateTimer);
+                duplicateTimer = setTimeout(() => {
+                    duplicateError.classList.add('hidden');
+                    duplicateTimer = null;
+                }, 5000);
+                return;
+            }
+            duplicateError.classList.add('hidden');
+            if (duplicateTimer) {
+                clearTimeout(duplicateTimer);
+                duplicateTimer = null;
+            }
             e.target.reset();
         } finally {
             btn.disabled = false;
             document.getElementById('btnText').innerText = 'Add';
             document.getElementById('btnSpinner').classList.add('hidden');
+            if (!duplicateError.classList.contains('hidden')) return;
             loadWords({reset: true});
         }
     };

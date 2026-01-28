@@ -71,6 +71,13 @@ def create_word(
     """Create a new word with AI enrichment."""
     user_id = _require_user_id(current_user)
     word_text = word_in.word
+    existing = word_repo.get_by_word_for_user(
+        session=session,
+        user_id=user_id,
+        word_text=word_text,
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="Word already exists")
     word_info = get_usage_examples(word=word_text)
     return word_repo.create_for_user(
         session=session,

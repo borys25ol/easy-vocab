@@ -57,6 +57,9 @@
             <div id="btnSpinner" class="spinner hidden"></div>
         </button>
     </form>
+    <div id="phrasalDuplicateError" class="hidden text-xs font-bold text-red-500 -mt-6 mb-6 pl-3">
+        Word already exists
+    </div>
 
     <div id="verbSelector" class="flex flex-wrap gap-2 mb-10 justify-center">
     </div>
@@ -110,6 +113,7 @@
     let isLoading = false;
     let allLoaded = false;
     let observer = null;
+    let duplicateTimer = null;
 
     // Load available phrasal verb roots from the server
     async function refreshRoots() {
@@ -182,17 +186,32 @@
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         const word = document.getElementById('target_word').value;
+        const duplicateError = document.getElementById('phrasalDuplicateError');
 
         btn.disabled = true;
         document.getElementById('btnText').innerText = 'Adding...';
         document.getElementById('btnSpinner').classList.remove('hidden');
 
         try {
-            await fetch('/words', {
+            const response = await fetch('/words', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({word})
             });
+            if (response.status === 409) {
+                duplicateError.classList.remove('hidden');
+                if (duplicateTimer) clearTimeout(duplicateTimer);
+                duplicateTimer = setTimeout(() => {
+                    duplicateError.classList.add('hidden');
+                    duplicateTimer = null;
+                }, 5000);
+                return;
+            }
+            duplicateError.classList.add('hidden');
+            if (duplicateTimer) {
+                clearTimeout(duplicateTimer);
+                duplicateTimer = null;
+            }
             await refreshRoots();
             if (currentRoot) loadPhrasal(currentRoot, {reset: true});
             e.target.reset();
@@ -200,6 +219,7 @@
             btn.disabled = false;
             document.getElementById('btnText').innerText = 'Add';
             document.getElementById('btnSpinner').classList.add('hidden');
+            if (!duplicateError.classList.contains('hidden')) return;
         }
     };
 

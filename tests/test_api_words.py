@@ -215,3 +215,20 @@ def test_words_filters_total(auth_client: TestClient) -> None:
     assert data["total"] == 1
     assert len(data["items"]) == 1
     assert data["items"][0]["word"] == "alpha"
+
+
+def test_create_word_duplicate_returns_conflict(auth_client: TestClient) -> None:
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("duplicate"),
+    ):
+        response = auth_client.post("/words/", json={"word": "Duplicate"})
+        assert response.status_code == 200
+
+        response = auth_client.post("/words/", json={"word": "Duplicate"})
+        assert response.status_code == 409
+
+    response = auth_client.get("/words/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
