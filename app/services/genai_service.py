@@ -90,7 +90,7 @@ def _strip_code_fences(content: str | None) -> str:
 
 
 def _extract_json(content: str | None) -> dict:
-    cleaned = _strip_code_fences(content)
+    cleaned = _strip_code_fences(content=content)
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
@@ -123,7 +123,7 @@ def _format_synonyms(response: LlmResponse) -> str:
 
 
 def _parse_response(content: str) -> LlmResponse:
-    data = _extract_json(content)
+    data = _extract_json(content=content)
     return LlmResponse.model_validate(data)
 
 
@@ -147,10 +147,15 @@ def get_usage_examples(word: str) -> WordInfo:
         max_retries=0,
     )
 
-    models = _build_models()
-    retry_count = settings.OPENROUTER_MAX_RETRIES
     prompt = USER_TEMPLATE % word.lower()
+
+    models = _build_models()
+    attempted_models: list[str] = []
+    retry_count = settings.OPENROUTER_MAX_RETRIES
+
     for model in models:
+        if model not in attempted_models:
+            attempted_models.append(model)
         for attempt in range(retry_count + 1):
             try:
                 response = client.chat.completions.create(
@@ -163,7 +168,7 @@ def get_usage_examples(word: str) -> WordInfo:
                     max_tokens=MAX_TOKENS,
                 )
                 content = response.choices[0].message.content or ""
-                parsed = _parse_response(content)
+                parsed = _parse_response(content=content)
                 return WordInfo(
                     word=parsed.word,
                     rank=parsed.rank,
@@ -174,10 +179,10 @@ def get_usage_examples(word: str) -> WordInfo:
                     type=parsed.type,
                     frequency=parsed.frequency,
                     frequency_group=parsed.frequency_group,
-                    examples=_build_examples(parsed),
+                    examples=_build_examples(response=parsed),
                     is_phrasal=parsed.is_phrasal,
                     is_idiom=parsed.is_idiom,
-                    synonyms=_format_synonyms(parsed),
+                    synonyms=_format_synonyms(response=parsed),
                 )
             except (
                 APITimeoutError,
@@ -194,7 +199,8 @@ def get_usage_examples(word: str) -> WordInfo:
                 else:
                     logger.warning("Retry budget exhausted for model %s", model)
 
+    models_tried = ", ".join(attempted_models) or "none"
     raise HTTPException(
         status_code=502,
-        detail="LLM request failed after retries",
+        detail=f"LLM request failed after retries. Models tried: {models_tried}",
     )
