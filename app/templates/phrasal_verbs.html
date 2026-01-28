@@ -66,6 +66,7 @@
     </div>
 
     <div id="phrasalList" class="space-y-4"></div>
+    <div id="scrollSentinel" class="h-8"></div>
 </div>
 
 <div id="editModal" class="modal">
@@ -103,6 +104,12 @@
 <script>
     let currentRoot = '';
     let wordIdToDelete = null;
+    let limit = 30;
+    let offset = 0;
+    let total = 0;
+    let isLoading = false;
+    let allLoaded = false;
+    let observer = null;
 
     // Load available phrasal verb roots from the server
     async function refreshRoots() {
@@ -113,7 +120,7 @@
         selector.innerHTML = '';
         roots.forEach(root => {
             const btn = document.createElement('button');
-            btn.onclick = () => loadPhrasal(root);
+            btn.onclick = () => loadPhrasal(root, {reset: true});
             btn.className = `verb-btn px-6 py-2 rounded-xl border bg-white font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm ${currentRoot === root ? 'active-verb' : ''}`;
             btn.innerText = root;
             selector.appendChild(btn);
@@ -121,7 +128,18 @@
     }
 
     // Load verbs for a specific root
-    async function loadPhrasal(root) {
+    async function loadPhrasal(root = currentRoot, {reset = false} = {}) {
+        if (!root) return;
+        if (isLoading) return;
+        if (allLoaded && !reset) return;
+
+        if (reset) {
+            offset = 0;
+            total = 0;
+            allLoaded = false;
+            document.getElementById('phrasalList').innerHTML = '';
+        }
+
         currentRoot = root;
         document.getElementById('target_word').value = root + ' ';
 
@@ -129,15 +147,34 @@
             btn.classList.toggle('active-verb', btn.innerText === root);
         });
 
-        const response = await fetch(`/words/phrasal/${root}`);
-        const words = await response.json();
-        const list = document.getElementById('phrasalList');
-        list.innerHTML = '';
-        document.getElementById('phrasalResultsCounter').innerText = `Found ${words.length} variants for "${root}"`;
+        isLoading = true;
+        try {
+            const params = new URLSearchParams();
+            params.set('limit', String(limit));
+            params.set('offset', String(offset));
+            const response = await fetch(`/words/phrasal/${root}?${params.toString()}`);
+            const data = await response.json();
+            const words = data.items || [];
+            const list = document.getElementById('phrasalList');
 
-        words.forEach(word => {
-            list.insertAdjacentHTML('beforeend', renderWordCard(word));
-        });
+            total = data.total || 0;
+            document.getElementById('phrasalResultsCounter').innerText = `Found ${total} variants for "${root}"`;
+
+            if (total === 0) {
+                list.innerHTML = '<div class="text-center text-slate-400 py-10">No phrasal verbs found yet. Add one above!</div>';
+                allLoaded = true;
+                return;
+            }
+
+            words.forEach(word => {
+                list.insertAdjacentHTML('beforeend', renderWordCard(word));
+            });
+
+            offset += words.length;
+            if (offset >= total) allLoaded = true;
+        } finally {
+            isLoading = false;
+        }
     }
 
     // Handle form submission for adding new verbs
@@ -157,7 +194,7 @@
                 body: JSON.stringify({word})
             });
             await refreshRoots();
-            if (currentRoot) loadPhrasal(currentRoot);
+            if (currentRoot) loadPhrasal(currentRoot, {reset: true});
             e.target.reset();
         } finally {
             btn.disabled = false;
@@ -188,7 +225,7 @@
             body: JSON.stringify({word: w, translation: t})
         });
         closeModal('editModal');
-        if (currentRoot) loadPhrasal(currentRoot);
+        if (currentRoot) loadPhrasal(currentRoot, {reset: true});
     }
 
     function requestDelete(id) {
@@ -201,19 +238,31 @@
             await fetch(`/words/${wordIdToDelete}`, {method: 'DELETE'});
             closeModal('deleteModal');
             await refreshRoots();
-            if (currentRoot) loadPhrasal(currentRoot);
+            if (currentRoot) loadPhrasal(currentRoot, {reset: true});
         }
     }
 
     async function toggleLearned(id) {
         await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
-        if (currentRoot) loadPhrasal(currentRoot);
+        if (currentRoot) loadPhrasal(currentRoot, {reset: true});
+    }
+
+    function setupObserver() {
+        const sentinel = document.getElementById('scrollSentinel');
+        if (observer) observer.disconnect();
+        observer = new IntersectionObserver(entries => {
+            if (entries.some(entry => entry.isIntersecting)) {
+                if (currentRoot) loadPhrasal(currentRoot);
+            }
+        });
+        observer.observe(sentinel);
     }
 
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 
     // Initial load
     refreshRoots();
+    setupObserver();
 </script>
 </body>
 </html>

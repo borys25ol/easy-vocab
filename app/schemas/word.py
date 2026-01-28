@@ -1,4 +1,5 @@
 import datetime
+from collections.abc import Sequence
 
 from pydantic import BaseModel, ConfigDict
 
@@ -57,3 +58,10 @@ class WordInfo(BaseModel):
     is_phrasal: bool
     is_idiom: bool
     synonyms: str | None
+
+
+class WordListResponse(BaseModel):
+    items: Sequence[WordRead]
+    total: int
+    limit: int | None
+    offset: int

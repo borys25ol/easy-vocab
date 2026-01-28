@@ -21,25 +21,64 @@
         <p class="text-slate-500 text-sm mt-2">Your collection of figurative expressions</p>
     </header>
 
+    <div id="idiomsCounter"
+         class="text-xs font-bold bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-full shadow-sm mb-6 inline-block">
+        Found: 0 idioms
+    </div>
+
     <div id="idiomsList" class="space-y-4">
     </div>
+    <div id="scrollSentinel" class="h-8"></div>
 </div>
 
 <script>
-    async function loadIdioms() {
-        const response = await fetch('/words/idioms');
-        const words = await response.json();
-        const list = document.getElementById('idiomsList');
-        list.innerHTML = '';
+    let limit = 30;
+    let offset = 0;
+    let total = 0;
+    let isLoading = false;
+    let allLoaded = false;
+    let observer = null;
 
-        if (words.length === 0) {
-            list.innerHTML = '<div class="text-center text-slate-400 py-10">No idioms found yet. Add some from the main page!</div>';
-            return;
+    async function loadIdioms({reset = false} = {}) {
+        if (isLoading) return;
+        if (allLoaded && !reset) return;
+
+        if (reset) {
+            offset = 0;
+            total = 0;
+            allLoaded = false;
+            document.getElementById('idiomsList').innerHTML = '';
         }
 
-        words.forEach(word => {
-            list.insertAdjacentHTML('beforeend', renderWordCard(word));
-        });
+        isLoading = true;
+        try {
+            const params = new URLSearchParams();
+            params.set('limit', String(limit));
+            params.set('offset', String(offset));
+
+            const response = await fetch(`/words/idioms?${params.toString()}`);
+            const data = await response.json();
+            const words = data.items || [];
+            const list = document.getElementById('idiomsList');
+
+            total = data.total || 0;
+            document.getElementById('idiomsCounter').innerText = `Found: ${total} idioms`;
+
+            if (total === 0) {
+                list.innerHTML = '<div class="text-center text-slate-400 py-10">No idioms found yet. Add some from the main page!</div>';
+                allLoaded = true;
+                return;
+            }
+
+            words.forEach(word => {
+                list.insertAdjacentHTML('beforeend', renderWordCard(word));
+            });
+
+            offset += words.length;
+            if (offset >= total) allLoaded = true;
+        } finally {
+            isLoading = false;
+        }
     }
 
     // Toggle card expansion
@@ -50,12 +89,24 @@
 
     async function toggleLearned(id) {
         await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
-        loadIdioms();
+        loadIdioms({reset: true});
+    }
+
+    function setupObserver() {
+        const sentinel = document.getElementById('scrollSentinel');
+        if (observer) observer.disconnect();
+        observer = new IntersectionObserver(entries => {
+            if (entries.some(entry => entry.isIntersecting)) {
+                loadIdioms();
+            }
+        });
+        observer.observe(sentinel);
     }
 
     // Initialize
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-    loadIdioms();
+    loadIdioms({reset: true});
+    setupObserver();
 </script>
 </body>
 </html>

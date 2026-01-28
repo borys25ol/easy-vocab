@@ -59,9 +59,10 @@
     async function initQuiz() {
         const response = await fetch('/words');
         const data = await response.json();
+        const items = data.items || [];
 
         // Filter out learned words for better practice
-        const pool = data.filter(w => !w.is_learned);
+        const pool = items.filter(w => !w.is_learned);
         allWords = pool.sort(() => Math.random() - 0.5).slice(0, 20);
 
         if (allWords.length < 4) {

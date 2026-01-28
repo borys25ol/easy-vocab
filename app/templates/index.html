@@ -250,6 +250,7 @@
             </div>
 
             <div id="wordsList" class="space-y-4 mt-6"></div>
+            <div id="scrollSentinel" class="h-8"></div>
         </div>
     </main>
 </div>
@@ -297,43 +298,65 @@
     let currentSort = 'date';
     let currentCategory = 'All';
     let currentLevel = 'All';
+    let limit = 50;
+    let offset = 0;
+    let total = 0;
+    let isLoading = false;
+    let allLoaded = false;
+    let observer = null;
 
     // LOAD WORDS FROM API
-    async function loadWords() {
-        const response = await fetch('/words');
-        let words = await response.json();
-        const list = document.getElementById('wordsList');
-        list.innerHTML = '';
+    async function loadWords({reset = false} = {}) {
+        if (isLoading) return;
+        if (allLoaded && !reset) return;
 
-        if (currentCategory !== 'All') words = words.filter(w => w.category === currentCategory);
-        if (currentLevel !== 'All') words = words.filter(w => w.level && w.level.includes(currentLevel));
+        if (reset) {
+            offset = 0;
+            total = 0;
+            allLoaded = false;
+            document.getElementById('wordsList').innerHTML = '';
+        }
 
-        document.getElementById('resultsCounter').innerText = `Found: ${words.length} words`;
-        document.getElementById('activeFilters').innerText = `${currentCategory} / ${currentLevel}`;
+        isLoading = true;
+        try {
+            const params = new URLSearchParams();
+            params.set('limit', String(limit));
+            params.set('offset', String(offset));
+            params.set('sort', currentSort);
+            if (currentCategory !== 'All') params.set('category', currentCategory);
+            if (currentLevel !== 'All') params.set('level', currentLevel);
 
-        words.sort((a, b) => {
-            if (a.is_learned !== b.is_learned) return a.is_learned - b.is_learned;
-            if (currentSort === 'rank') return (parseInt(a.rank) || 99999) - (parseInt(b.rank) || 99999);
-            return b.id - a.id;
-        });
+            const response = await fetch(`/words?${params.toString()}`);
+            const data = await response.json();
+            const words = data.items || [];
+            const list = document.getElementById('wordsList');
+            total = data.total || 0;
+            document.getElementById('resultsCounter').innerText = `Found: ${total} words`;
+            document.getElementById('activeFilters').innerText = `${currentCategory} / ${currentLevel}`;
 
-        words.forEach(word => {
-            // USING THE SHARED RENDERER
-            list.insertAdjacentHTML('beforeend', renderWordCard(word));
-        });
+            words.forEach(word => {
+                // USING THE SHARED RENDERER
+                list.insertAdjacentHTML('beforeend', renderWordCard(word));
+            });
+
+            offset += words.length;
+            if (offset >= total) allLoaded = true;
+        } finally {
+            isLoading = false;
+        }
     }
 
     // HELPER FUNCTIONS
     function filterByCategory(cat) {
         currentCategory = cat;
         document.querySelectorAll('.cat-filter').forEach(btn => btn.classList.toggle('active-cat', btn.innerText === cat));
-        loadWords();
+        loadWords({reset: true});
     }
 
     function filterByLevel(lvl) {
         currentLevel = lvl;
         document.querySelectorAll('#levelFilters button').forEach(btn => btn.classList.toggle('active-lvl', (btn.dataset.level || btn.innerText) === lvl));
-        loadWords();
+        loadWords({reset: true});
     }
 
     function toggleSort() {
@@ -347,7 +370,7 @@
         if (sortBtn) sortBtn.innerHTML = `<span>⏳</span> ${label}`;
         if (sortBtnMobile) sortBtnMobile.innerText = mobileLabel;
 
-        loadWords();
+        loadWords({reset: true});
     }
 
     function closeModal(id) {
@@ -356,7 +379,7 @@
 
     async function toggleLearned(id) {
         await fetch(`/words/${id}/toggle_learned`, {method: 'PATCH'});
-        loadWords();
+        loadWords({reset: true});
     }
 
     function openEditModal(id, word, trans, cat) {
@@ -378,7 +401,7 @@
             body: JSON.stringify({word: w, translation: t, category: c})
         });
         closeModal('editModal');
-        loadWords();
+        loadWords({reset: true});
     }
 
     function requestDelete(id) {
@@ -390,7 +413,7 @@
         if (wordIdToDelete) {
             await fetch(`/words/${wordIdToDelete}`, {method: 'DELETE'});
             closeModal('deleteModal');
-            loadWords();
+            loadWords({reset: true});
         }
     }
 
@@ -412,9 +435,20 @@
             btn.disabled = false;
             document.getElementById('btnText').innerText = 'Add';
             document.getElementById('btnSpinner').classList.add('hidden');
-            loadWords();
+            loadWords({reset: true});
         }
     };
+
+    function setupObserver() {
+        const sentinel = document.getElementById('scrollSentinel');
+        if (observer) observer.disconnect();
+        observer = new IntersectionObserver(entries => {
+            if (entries.some(entry => entry.isIntersecting)) {
+                loadWords();
+            }
+        });
+        observer.observe(sentinel);
+    }
 
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
@@ -439,8 +473,10 @@
         toggleSidebar();
     }
 
+    loadWords({reset: true});
+    setupObserver();
+
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-    loadWords();
 </script>
 </body>
 

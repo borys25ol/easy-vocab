@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, cast
 
-from sqlmodel import Session, select, true
+from sqlmodel import Session, func, select, true
 
 from app.models.word import Word
 from app.schemas.word import WordInfo, WordUpdate
@@ -10,14 +10,87 @@ from app.schemas.word import WordInfo, WordUpdate
 class WordRepository:
     """Data access for Word entities."""
 
-    def list_for_user(self, session: Session, user_id: int) -> Sequence[Word]:
-        """Return all words for a user ordered by creation time."""
-        statement = (
-            select(Word)
-            .where(Word.user_id == user_id)
-            .order_by(cast(Any, Word.created_at).desc())
+    def _apply_filters(
+        self,
+        statement: Any,
+        *,
+        user_id: int,
+        category: str | None = None,
+        level: str | None = None,
+        is_learned: bool | None = None,
+    ) -> Any:
+        statement = statement.where(Word.user_id == user_id)
+        if category:
+            statement = statement.where(Word.category == category)
+        if level:
+            level_column = cast(Any, Word.level)
+            statement = statement.where(level_column.like(f"%{level}%"))
+        if is_learned is not None:
+            statement = statement.where(Word.is_learned == is_learned)
+        return statement
+
+    def _apply_pagination(
+        self, statement: Any, *, limit: int | None, offset: int
+    ) -> Any:
+        if offset:
+            statement = statement.offset(offset)
+        if limit is not None:
+            statement = statement.limit(limit)
+        return statement
+
+    def list_for_user(
+        self,
+        session: Session,
+        user_id: int,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+        category: str | None = None,
+        level: str | None = None,
+        is_learned: bool | None = None,
+        sort: str = "date",
+    ) -> Sequence[Word]:
+        """Return words for a user ordered by creation time."""
+        statement = select(Word)
+        statement = self._apply_filters(
+            statement,
+            user_id=user_id,
+            category=category,
+            level=level,
+            is_learned=is_learned,
         )
+        if sort == "rank":
+            statement = statement.order_by(
+                cast(Any, Word.is_learned),
+                cast(Any, Word.rank),
+                cast(Any, Word.created_at).desc(),
+            )
+        else:
+            statement = statement.order_by(
+                cast(Any, Word.is_learned),
+                cast(Any, Word.created_at).desc(),
+            )
+        statement = self._apply_pagination(statement, limit=limit, offset=offset)
         return session.exec(statement).all()
+
+    def count_for_user(
+        self,
+        session: Session,
+        user_id: int,
+        *,
+        category: str | None = None,
+        level: str | None = None,
+        is_learned: bool | None = None,
+    ) -> int:
+        statement = select(func.count()).select_from(Word)
+        statement = self._apply_filters(
+            statement,
+            user_id=user_id,
+            category=category,
+            level=level,
+            is_learned=is_learned,
+        )
+        return int(session.exec(statement).one())
 
     def get_by_id_for_user(
         self, session: Session, word_id: int, user_id: int
@@ -73,7 +146,13 @@ class WordRepository:
         return sorted(roots)
 
     def list_phrasal_verbs(
-        self, session: Session, user_id: int, root: str
+        self,
+        session: Session,
+        user_id: int,
+        root: str,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
     ) -> Sequence[Word]:
         """List phrasal verbs for a root and user."""
         search_pattern = f"{root.lower()} %"
@@ -83,10 +162,31 @@ class WordRepository:
             .where(Word.user_id == user_id)
             .where(word_column.like(search_pattern))
             .where(Word.is_phrasal == true())
+            .order_by(cast(Any, Word.created_at).desc())
         )
+        statement = self._apply_pagination(statement, limit=limit, offset=offset)
         return session.exec(statement).all()
 
-    def list_idioms(self, session: Session, user_id: int) -> Sequence[Word]:
+    def count_phrasal_verbs(self, session: Session, user_id: int, root: str) -> int:
+        search_pattern = f"{root.lower()} %"
+        word_column = cast(Any, Word.word)
+        statement = (
+            select(func.count())
+            .select_from(Word)
+            .where(Word.user_id == user_id)
+            .where(word_column.like(search_pattern))
+            .where(Word.is_phrasal == true())
+        )
+        return int(session.exec(statement).one())
+
+    def list_idioms(
+        self,
+        session: Session,
+        user_id: int,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> Sequence[Word]:
         """List idioms for a user ordered by creation time."""
         statement = (
             select(Word)
@@ -94,7 +194,17 @@ class WordRepository:
             .where(Word.is_idiom == true())
             .order_by(cast(Any, Word.created_at).desc())
         )
+        statement = self._apply_pagination(statement, limit=limit, offset=offset)
         return session.exec(statement).all()
+
+    def count_idioms(self, session: Session, user_id: int) -> int:
+        statement = (
+            select(func.count())
+            .select_from(Word)
+            .where(Word.user_id == user_id)
+            .where(Word.is_idiom == true())
+        )
+        return int(session.exec(statement).one())
 
     def update_word(
         self, session: Session, word: Word, word_update: WordUpdate
