@@ -47,6 +47,6 @@ addopts = "-ra -q -s -v"
 
 [dependency-groups]
 dev = [
-    "mypy==1.19.1",
     "pre-commit==4.5.1",
+    "ty>=0.0.14",
 ]

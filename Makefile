@@ -35,7 +35,7 @@ format:
 	ruff format .
 
 types:
-	mypy .
+	ty check .
 
 test:
 	pytest

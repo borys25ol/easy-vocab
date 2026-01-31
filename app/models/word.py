@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from app.schemas.word import WordInfo
 
 
-class Word(SQLModel, table=True):  # type: ignore
+class Word(SQLModel, table=True):
     __tablename__ = "words"
 
     id: int | None = Field(default=None, primary_key=True, index=True)

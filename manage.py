@@ -1,5 +1,4 @@
 import secrets
-import sys
 
 import click
 from sqlmodel import select
@@ -27,7 +26,7 @@ def create_user(username: str, password: str) -> None:
         existing_user = session.exec(statement).first()
         if existing_user:
             click.echo(f"Error: User '{username}' already exists.")
-            sys.exit(1)
+            return
 
         hashed_password = get_password_hash(password)
         mcp_api_key = generate_mcp_api_key()
@@ -49,7 +48,7 @@ def rotate_mcp_key(username: str) -> None:
         user = session.exec(statement).first()
         if not user:
             click.echo(f"Error: User '{username}' not found.")
-            sys.exit(1)
+            return
 
         mcp_api_key = generate_mcp_api_key()
         user.mcp_api_key = mcp_api_key
@@ -80,14 +79,14 @@ def backfill_mcp_keys() -> None:
 @click.option("--password", required=True, help="Password for the new user")
 def create_user_command(username: str, password: str) -> None:
     """Create a new user."""
-    create_user(username, password)
+    create_user(username=username, password=password)
 
 
 @cli.command("rotate-mcp-key")
 @click.option("--username", required=True, help="Username to rotate MCP API key")
 def rotate_mcp_key_command(username: str) -> None:
     """Rotate MCP API key for a user."""
-    rotate_mcp_key(username)
+    rotate_mcp_key(username=username)
 
 
 @cli.command("backfill-mcp-keys")

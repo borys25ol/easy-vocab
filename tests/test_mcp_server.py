@@ -1,6 +1,6 @@
 import asyncio
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -19,7 +19,7 @@ def run_tool(word: str) -> dict[str, Any]:
     result = asyncio.run(add_word.run({"word": word}))
     if result.structured_content is None:
         raise AssertionError("Expected structured content")
-    return cast(dict[str, Any], result.structured_content)
+    return result.structured_content
 
 
 def test_add_word_propagates_tool_error() -> None:
