@@ -25,22 +25,6 @@ dependencies = [
     "uvicorn==0.40.0",
 ]
 
-[tool.mypy]
-python_version = "3.12"
-ignore_missing_imports = true
-allow_redefinition = true
-warn_no_return = false
-check_untyped_defs = false
-disallow_untyped_defs = true
-warn_unused_ignores = true
-follow_imports = "skip"
-strict_optional = true
-exclude = [
-    '^.ve/',
-    '^env/',
-    '^logs/',
-]
-
 [tool.pytest.ini_options]
 norecursedirs = [".ve"]
 addopts = "-ra -q -s -v"

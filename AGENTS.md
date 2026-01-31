@@ -58,7 +58,7 @@ easy-words-learning/
 
 ### Pre-commit Hooks
 - **ruff**: Linting, formatting, import sorting (replaces Black, isort, flake8, pyupgrade)
-- **mypy**: Type checking
+- **ty**: Type checking
 
 ### Code Quality Settings
 - Max complexity: 15 (Ruff)
@@ -112,7 +112,7 @@ make docker-prod-logs    # View production logs
 make style        # Check style without formatting
 make format       # Format with ruff
 make lint         # Run linting and fix issues
-make types        # Run mypy type checking
+make types        # Run ty type checking
 make test         # Run pytest
 make create-user  # Create a new user via CLI
 make run_hooks    # Run pre-commit hooks on all files
