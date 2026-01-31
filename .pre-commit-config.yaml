@@ -27,6 +27,6 @@ repos:
     hooks:
       - id: ty
         name: ty check
-        language: python
-        entry: uvx ty check . --python .venv
-        files: \.py$
+        language: system
+        entry: ty check --python .venv
+        types: [python]
