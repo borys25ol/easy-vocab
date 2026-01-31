@@ -1,4 +1,9 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+CookieSameSite = Literal["lax", "strict", "none"]
 
 
 class Settings(BaseSettings):
@@ -22,7 +27,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     SESSION_COOKIE_NAME: str = "session"
     COOKIE_SECURE: bool | None = None
-    COOKIE_SAMESITE: str = "lax"
+    COOKIE_SAMESITE: CookieSameSite = "lax"
     COOKIE_PATH: str = "/"
     COOKIE_DOMAIN: str | None = None
     MCP_PORT: int = 6432
@@ -44,8 +49,8 @@ class Settings(BaseSettings):
         return self.COOKIE_SECURE
 
     @property
-    def SESSION_COOKIE_SAMESITE(self) -> str:
-        return self.COOKIE_SAMESITE.lower()
+    def SESSION_COOKIE_SAMESITE(self) -> CookieSameSite:
+        return self.COOKIE_SAMESITE
 
 
 settings = Settings()

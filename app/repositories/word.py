@@ -1,7 +1,7 @@
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import Any
 
-from sqlmodel import Session, func, select, true
+from sqlmodel import Session, col, func, select, true
 
 from app.models.word import Word
 from app.schemas.word import WordInfo, WordUpdate
@@ -47,14 +47,14 @@ class WordRepository:
         )
         if sort == "rank":
             statement = statement.order_by(
-                cast(Any, Word.is_learned),
-                cast(Any, Word.rank),
-                cast(Any, Word.created_at).desc(),
+                col(Word.is_learned),
+                col(Word.rank),
+                col(Word.created_at).desc(),
             )
         else:
             statement = statement.order_by(
-                cast(Any, Word.is_learned),
-                cast(Any, Word.created_at).desc(),
+                col(Word.is_learned),
+                col(Word.created_at).desc(),
             )
         statement = self._apply_pagination(statement, limit=limit, offset=offset)
         return session.exec(statement).all()
@@ -212,13 +212,13 @@ class WordRepository:
             List of matching phrasal verbs.
         """
         search_pattern = f"{root.lower()} %"
-        word_column = cast(Any, Word.word)
+        word_column = col(Word.word)
         statement = (
             select(Word)
             .where(Word.user_id == user_id)
             .where(word_column.like(search_pattern))
             .where(Word.is_phrasal == true())
-            .order_by(cast(Any, Word.created_at).desc())
+            .order_by(col(Word.created_at).desc())
         )
         statement = self._apply_pagination(statement, limit=limit, offset=offset)
         return session.exec(statement).all()
@@ -235,7 +235,7 @@ class WordRepository:
             Count of matching phrasal verbs.
         """
         search_pattern = f"{root.lower()} %"
-        word_column = cast(Any, Word.word)
+        word_column = col(Word.word)
         statement = (
             select(func.count())
             .select_from(Word)
@@ -268,7 +268,7 @@ class WordRepository:
             select(Word)
             .where(Word.user_id == user_id)
             .where(Word.is_idiom == true())
-            .order_by(cast(Any, Word.created_at).desc())
+            .order_by(col(Word.created_at).desc())
         )
         statement = self._apply_pagination(statement, limit=limit, offset=offset)
         return session.exec(statement).all()
@@ -367,7 +367,7 @@ class WordRepository:
         if category:
             statement = statement.where(Word.category == category)
         if level:
-            level_column = cast(Any, Word.level)
+            level_column = col(Word.level)
             statement = statement.where(level_column.like(f"%{level}%"))
         if is_learned is not None:
             statement = statement.where(Word.is_learned == is_learned)

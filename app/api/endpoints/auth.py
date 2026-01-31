@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, Form, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -45,10 +44,7 @@ async def login(
         )
 
     access_token = create_access_token(subject=user.username)
-    samesite = cast(
-        Literal["lax", "strict", "none"] | None,
-        settings.SESSION_COOKIE_SAMESITE,
-    )
+    samesite = settings.SESSION_COOKIE_SAMESITE
 
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
@@ -69,10 +65,7 @@ async def login(
 async def logout() -> RedirectResponse:
     """Clear the session cookie and redirect to the login."""
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-    samesite = cast(
-        Literal["lax", "strict", "none"] | None,
-        settings.SESSION_COOKIE_SAMESITE,
-    )
+    samesite = settings.SESSION_COOKIE_SAMESITE
     response.delete_cookie(
         settings.SESSION_COOKIE_NAME,
         path=settings.COOKIE_PATH,

@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Literal, cast
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session
@@ -54,7 +53,7 @@ def get_words(
         is_learned=is_learned,
     )
     return WordListResponse(
-        items=cast(Sequence[WordRead], items),
+        items=[WordRead.model_validate(item) for item in items],
         total=total,
         limit=limit,
         offset=offset,
@@ -126,7 +125,7 @@ def get_phrasal_verbs(
         root=root,
     )
     return WordListResponse(
-        items=cast(Sequence[WordRead], items),
+        items=[WordRead.model_validate(item) for item in items],
         total=total,
         limit=limit,
         offset=offset,
@@ -153,7 +152,7 @@ def get_idioms(
     )
     total = word_repo.count_idioms(session=session, user_id=user_id)
     return WordListResponse(
-        items=cast(Sequence[WordRead], items),
+        items=[WordRead.model_validate(item) for item in items],
         total=total,
         limit=limit,
         offset=offset,
