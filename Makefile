@@ -40,6 +40,8 @@ types:
 test:
 	pytest
 
+check: lint types test
+
 # Docker commands
 docker-build:
 	docker compose build
