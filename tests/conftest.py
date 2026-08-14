@@ -32,6 +32,9 @@ def refuse_real_llm_calls(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
     monkeypatch.setattr(genai_service, "OpenAI", refuse)
+    # The client is cached for the process, so without this a fake built by
+    # one test would serve every later one.
+    genai_service._get_client.cache_clear()
 
 
 @pytest.fixture(name="session")
