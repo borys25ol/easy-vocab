@@ -177,14 +177,19 @@ class WordRepository:
         Returns:
             Sorted list of unique phrasal roots.
         """
+        # Only the text is needed, so select the column rather than hydrate a
+        # full entity per row. Splitting stays in Python: the SQL for it is
+        # dialect specific, and the tests run on SQLite.
         statement = (
-            select(Word).where(Word.user_id == user_id).where(Word.is_phrasal == true())
+            select(col(Word.word))
+            .where(Word.user_id == user_id)
+            .where(Word.is_phrasal == true())
         )
-        phrasal_verbs = session.exec(statement).all()
+        phrasal_words = session.exec(statement).all()
 
         roots = set()
-        for verb in phrasal_verbs:
-            parts = verb.word.split()
+        for phrasal_word in phrasal_words:
+            parts = phrasal_word.split()
             if parts:
                 roots.add(parts[0].strip().capitalize())
 
@@ -305,7 +310,10 @@ class WordRepository:
             Updated Word.
         """
         if word_update.word is not None:
-            word.word = word_update.word
+            # Creation stores the text lowercased, and both duplicate
+            # detection and the phrasal LIKE search assume it. An update that
+            # skipped this hid the row from both.
+            word.word = word_update.word.lower()
         if word_update.translation is not None:
             word.translation = word_update.translation
         if word_update.category is not None:

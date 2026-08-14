@@ -3,9 +3,21 @@ import logging
 import random
 import re
 import time
+from functools import lru_cache
 
 from fastapi import HTTPException
-from openai import APIConnectionError, APIError, APITimeoutError, OpenAI, RateLimitError
+from openai import (
+    APIConnectionError,
+    APIError,
+    APITimeoutError,
+    AuthenticationError,
+    BadRequestError,
+    InternalServerError,
+    NotFoundError,
+    OpenAI,
+    PermissionDeniedError,
+    RateLimitError,
+)
 from pydantic import ValidationError
 
 from app.core.config import settings
@@ -78,6 +90,41 @@ BACKOFF_BASE_SECONDS = 0.5
 
 logger = logging.getLogger(__name__)
 
+# Retrying these cannot change the outcome: the credentials are refused or
+# the request itself is malformed. Retrying spent the whole budget across
+# every model, on every word added, and buried the one error worth reading.
+FATAL_ERRORS = (AuthenticationError, PermissionDeniedError, BadRequestError)
+
+# Fatal for this model only. Another one in the list may well exist.
+MODEL_ERRORS = (NotFoundError,)
+
+# Worth another attempt. The parsing errors belong here because the model
+# can return valid JSON on a second try.
+RETRYABLE_ERRORS = (
+    APITimeoutError,
+    APIConnectionError,
+    RateLimitError,
+    InternalServerError,
+    json.JSONDecodeError,
+    ValidationError,
+    APIError,
+)
+
+
+@lru_cache(maxsize=1)
+def _get_client() -> OpenAI:
+    """Build the client once.
+
+    A client per request throws away its connection pool, so every word paid
+    for a fresh TLS handshake.
+    """
+    return OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=settings.OPENROUTER_API_KEY,
+        timeout=float(settings.OPENROUTER_TIMEOUT_SECONDS),
+        max_retries=0,
+    )
+
 
 def _sleep_with_backoff(attempt: int) -> None:
     delay = BACKOFF_BASE_SECONDS * (2**attempt)
@@ -140,22 +187,17 @@ def get_usage_examples(word: str) -> WordInfo:
     Retrieves usage examples, synonyms, and additional metadata for a given word
     from an external language model API via OpenRouter.
     """
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=settings.OPENROUTER_API_KEY,
-        timeout=float(settings.OPENROUTER_TIMEOUT_SECONDS),
-        max_retries=0,
-    )
+    client = _get_client()
 
     prompt = USER_TEMPLATE % word.lower()
 
+    # _build_models already removes duplicates, so this list needs no guard.
     models = _build_models()
     attempted_models: list[str] = []
     retry_count = settings.OPENROUTER_MAX_RETRIES
 
     for model in models:
-        if model not in attempted_models:
-            attempted_models.append(model)
+        attempted_models.append(model)
         for attempt in range(retry_count + 1):
             try:
                 response = client.chat.completions.create(
@@ -184,14 +226,21 @@ def get_usage_examples(word: str) -> WordInfo:
                     is_idiom=parsed.is_idiom,
                     synonyms=_format_synonyms(response=parsed),
                 )
-            except (
-                APITimeoutError,
-                APIConnectionError,
-                APIError,
-                RateLimitError,
-                json.JSONDecodeError,
-                ValidationError,
-            ) as exc:
+            except FATAL_ERRORS as exc:
+                logger.error("LLM rejected the request, not retrying: %s", exc)
+                raise HTTPException(
+                    status_code=502,
+                    detail=(
+                        "LLM rejected the request. Check OPENROUTER_API_KEY "
+                        "and the configured model."
+                    ),
+                ) from exc
+            except MODEL_ERRORS as exc:
+                logger.warning(
+                    "Model %s is unavailable, trying the next: %s", model, exc
+                )
+                break
+            except RETRYABLE_ERRORS as exc:
                 error_message = f"{model} attempt {attempt + 1}: {exc}"
                 logger.warning("LLM request failed: %s", error_message)
                 if attempt < retry_count:
