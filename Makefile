@@ -58,14 +58,6 @@ docker-down:
 docker-logs:
 	docker compose logs -f
 
-docker-prod-build:
-	docker compose -f docker-compose.prod.yml build
 
-docker-prod-up:
-	docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 
-docker-prod-down:
-	docker compose -f docker-compose.prod.yml down
 
-docker-prod-logs:
-	docker compose -f docker-compose.prod.yml logs -f
