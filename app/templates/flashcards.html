@@ -227,7 +227,7 @@
                     .split('\n')
                     .map(ex => `
                         <div class="bg-slate-50/50 p-3 rounded-2xl border border-slate-100 text-[13px] hover:bg-white transition-colors">
-                            <span class="text-indigo-400 mr-2">•</span>${ex}
+                            <span class="text-indigo-400 mr-2">•</span>${escapeHtml(ex)}
                         </div>
                     `).join('');
             } else {

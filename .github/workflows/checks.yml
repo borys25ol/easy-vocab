@@ -41,3 +41,7 @@ jobs:
 
       - name: Test
         run: uv run pytest
+
+      # node ships on the runner, and the test needs no packages.
+      - name: Test JavaScript
+        run: node tests/js/card-renderer.test.mjs

@@ -43,9 +43,14 @@ types:
 test:
 	pytest
 
+# Plain node, no runner and no packages. The escaping these cover is the only
+# thing standing between a stored word and innerHTML.
+test_js:
+	node tests/js/card-renderer.test.mjs
+
 # Mirrors the CI Checks workflow. Keep the two in step, or a green local run
 # stops meaning anything about the pull request.
-check: lint format_check types test
+check: lint format_check types test test_js
 
 # Docker commands
 docker-build:
