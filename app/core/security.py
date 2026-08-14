@@ -20,6 +20,14 @@ ALGORITHM = "HS256"
 _SHA256_SCHEME_PREFIX = "sha256$"
 
 
+# A hash of a random string that was never recorded. Login verifies against
+# it when the username does not exist, so an unknown username costs the same
+# bcrypt round as a wrong password and stops leaking which accounts are real.
+DUMMY_PASSWORD_HASH = (
+    "sha256$$2b$12$HQ29RsMX1HANKX05SYAV7.g0c4XeVHIHzHO3kdp9CKcyFqbxxeaS."
+)
+
+
 def _prehash(password: str) -> bytes:
     """Fold a password of any length into 44 bcrypt-safe bytes.
 

@@ -8,7 +8,11 @@ from sqlmodel import Session
 from app.api.deps import get_user_repository
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.security import create_access_token, verify_password
+from app.core.security import (
+    DUMMY_PASSWORD_HASH,
+    create_access_token,
+    verify_password,
+)
 from app.repositories.user import UserRepository
 
 
@@ -34,7 +38,13 @@ async def login(
     """Authenticate user and set session cookie."""
     user = user_repo.get_by_username(session=db, username=username)
 
-    if not user or not verify_password(password, user.hashed_password):
+    # Hash unconditionally. Returning early for an unknown username would
+    # answer in about a millisecond instead of the ~200 ms a bcrypt round
+    # takes, which tells an attacker the username exists.
+    stored_hash = user.hashed_password if user else DUMMY_PASSWORD_HASH
+    password_matches = verify_password(password, stored_hash)
+
+    if not user or not password_matches:
         return templates.TemplateResponse(
             request,
             "login.html",

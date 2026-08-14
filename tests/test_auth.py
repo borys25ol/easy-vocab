@@ -1,3 +1,6 @@
+import statistics
+import time
+
 from fastapi import status
 from fastapi.testclient import TestClient
 
@@ -31,6 +34,36 @@ def test_login_failure(client: TestClient, test_user: User) -> None:
     assert response.status_code == status.HTTP_200_OK
     assert "Invalid credentials" in response.text
     assert settings.SESSION_COOKIE_NAME not in response.cookies
+
+
+def test_unknown_username_costs_the_same_as_a_wrong_password(
+    client: TestClient, test_user: User
+) -> None:
+    """Skipping the hash for unknown users leaks which usernames exist.
+
+    Bcrypt dominates the request, so an early return on a missing user makes
+    the response an order of magnitude faster and turns login into a username
+    oracle. Compare medians as a ratio to stay independent of machine speed.
+    """
+
+    def median_seconds(username: str) -> float:
+        samples = []
+        for _ in range(3):
+            start = time.perf_counter()
+            client.post(
+                "/login",
+                data={"username": username, "password": "wrongpassword"},
+                follow_redirects=False,
+            )
+            samples.append(time.perf_counter() - start)
+        return statistics.median(samples)
+
+    known = median_seconds(test_user.username)
+    unknown = median_seconds("no-such-user")
+
+    assert unknown > known * 0.5, (
+        f"unknown user answered in {unknown:.3f}s vs {known:.3f}s for a known one"
+    )
 
 
 def test_logout(auth_client: TestClient) -> None:
