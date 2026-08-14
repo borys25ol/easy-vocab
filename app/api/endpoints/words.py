@@ -12,7 +12,9 @@ from app.schemas.word import WordCreate, WordListResponse, WordRead, WordUpdate
 from app.services.genai_service import get_usage_examples
 
 
-router = APIRouter(dependencies=[Depends(get_current_user)])
+# Every route below already injects get_current_user to read the user, and
+# FastAPI resolves a dependency once per request, so no router-level copy.
+router = APIRouter()
 
 
 def _require_user_id(user: User) -> int:

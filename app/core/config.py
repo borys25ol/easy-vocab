@@ -24,7 +24,6 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
 
     SECRET_KEY: str = "dev_secret_key_change_me"
-    ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     SESSION_COOKIE_NAME: str = "session"
     COOKIE_SECURE: bool | None = None
@@ -53,6 +52,7 @@ class Settings(BaseSettings):
             for name, default in (
                 ("SECRET_KEY", "dev_secret_key_change_me"),
                 ("OPENROUTER_API_KEY", "unknown"),
+                ("POSTGRES_PASSWORD", "unknown"),
             )
             if getattr(self, name) == default
         ]

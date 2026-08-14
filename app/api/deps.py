@@ -49,23 +49,6 @@ async def get_current_user(
     return user
 
 
-async def get_optional_user(
-    request: Request,
-    db: Session = Depends(get_session),
-    user_repo: UserRepository = Depends(get_user_repository),
-) -> User | None:
-    """Return the authenticated user if present."""
-    token = request.cookies.get(settings.SESSION_COOKIE_NAME)
-    if not token:
-        return None
-
-    username = decode_access_token(token)
-    if not username:
-        return None
-
-    return user_repo.get_by_username(session=db, username=username)
-
-
 async def require_user_or_redirect(
     request: Request,
     db: Session = Depends(get_session),

@@ -42,6 +42,34 @@ def test_unauthorized_access(client: TestClient) -> None:
     assert response.status_code == 401
 
 
+def test_every_words_route_requires_authentication() -> None:
+    """Each route must resolve get_current_user, since the router adds no guard.
+
+    Without this the next route added to the module silently ships unprotected.
+    """
+    from fastapi.dependencies.models import Dependant
+    from fastapi.routing import APIRoute
+
+    from app.api.deps import get_current_user
+    from app.api.endpoints.words import router
+
+    def resolves_current_user(dependant: Dependant) -> bool:
+        if dependant.call is get_current_user:
+            return True
+        return any(resolves_current_user(sub) for sub in dependant.dependencies)
+
+    routes = [route for route in router.routes if isinstance(route, APIRoute)]
+    assert routes, "no routes found, the check would pass vacuously"
+
+    unprotected = [
+        f"{sorted(route.methods)} {route.path}"
+        for route in routes
+        if not resolves_current_user(route.dependant)
+    ]
+
+    assert not unprotected
+
+
 def test_create_word(auth_client: TestClient) -> None:
     # Patch where it is imported in the endpoint module
     with patch(
