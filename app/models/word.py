@@ -1,7 +1,7 @@
 import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Column, DateTime, text
+from sqlalchemy import Column, DateTime, UniqueConstraint, text
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -12,6 +12,11 @@ if TYPE_CHECKING:
 
 class Word(SQLModel, table=True):
     __tablename__ = "words"
+
+    # The endpoint checks for an existing row before inserting, which cannot
+    # settle two requests that interleave: both read nothing and both write.
+    # The text is stored lowercased, so plain column equality is enough.
+    __table_args__ = (UniqueConstraint("user_id", "word", name="uq_words_user_word"),)
 
     id: int | None = Field(default=None, primary_key=True, index=True)
     user_id: int = Field(foreign_key="user.id", index=True)

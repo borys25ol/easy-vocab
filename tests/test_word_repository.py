@@ -144,3 +144,39 @@ def test_get_by_word_for_user(session: Session) -> None:
     found = repo.get_by_word_for_user(session, user_id=1, word_text="TestWord")
     assert found is not None
     assert found.word == "testword"
+
+
+def test_the_same_word_cannot_be_stored_twice_for_one_user(session: Session) -> None:
+    """The 409 check reads before it writes, so only the database can settle it.
+
+    Two requests that interleave both see no existing row and both insert.
+    """
+    import pytest
+    from sqlalchemy.exc import IntegrityError
+
+    create_word(session, user_id=1, word="take off")
+
+    with pytest.raises(IntegrityError):
+        create_word(session, user_id=1, word="take off")
+
+    session.rollback()
+
+
+def test_two_users_may_each_store_the_same_word(session: Session) -> None:
+    """The constraint is per user, not global."""
+    create_word(session, user_id=1, word="take off")
+    second = create_word(session, user_id=2, word="take off")
+
+    assert second.id is not None
+
+
+def test_list_phrasal_roots_reads_only_the_word_column(session: Session) -> None:
+    """Hydrating whole rows to compute distinct first words is wasted work."""
+    create_word(session, user_id=1, word="take off", is_phrasal=True)
+    create_word(session, user_id=1, word="take on", is_phrasal=True)
+    create_word(session, user_id=1, word="pick up", is_phrasal=True)
+    create_word(session, user_id=1, word="house", is_phrasal=False)
+
+    roots = WordRepository().list_phrasal_roots(session=session, user_id=1)
+
+    assert roots == ["Pick", "Take"]
