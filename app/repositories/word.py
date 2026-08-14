@@ -305,7 +305,10 @@ class WordRepository:
             Updated Word.
         """
         if word_update.word is not None:
-            word.word = word_update.word
+            # Creation stores the text lowercased, and both duplicate
+            # detection and the phrasal LIKE search assume it. An update that
+            # skipped this hid the row from both.
+            word.word = word_update.word.lower()
         if word_update.translation is not None:
             word.translation = word_update.translation
         if word_update.category is not None:
