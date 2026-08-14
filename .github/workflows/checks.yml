@@ -1,0 +1,47 @@
+name: Checks
+
+# Runs on pull requests so a broken change is caught before review, and on
+# main so a direct push cannot slip past. The build workflow deploys straight
+# from main, which until now happened with nothing verified at all.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # The suite runs against SQLite in memory, so no database service is
+      # needed here. Settings fall back to development defaults because the
+      # runner has no .env file.
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Type check
+        run: uv run ty check .
+
+      - name: Test
+        run: uv run pytest
+
+      # node ships on the runner, and the test needs no packages.
+      - name: Test JavaScript
+        run: node tests/js/card-renderer.test.mjs

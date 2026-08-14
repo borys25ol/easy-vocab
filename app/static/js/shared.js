@@ -1,3 +1,36 @@
+// HTML ESCAPING
+//
+// Card markup is assembled as strings and assigned to innerHTML. Word text,
+// translation and category are editable through the API, and examples and
+// synonyms come back from the language model, so none of it can be trusted
+// as markup. Escaping the five characters below is enough for text nodes and
+// for values inside quoted attributes.
+const HTML_ESCAPES = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+};
+
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
+}
+
+// Reading the value back from a data attribute keeps user text out of the
+// JavaScript that the onclick attribute parses. Passing it inline meant a
+// single quote, or a double quote, could close the attribute and start a new
+// one.
+function speakFromButton(button) {
+    speak(button.dataset.speak);
+}
+
+function openEditModalFromButton(button) {
+    const data = button.dataset;
+    openEditModal(Number(data.id), data.word, data.translation, data.category);
+}
+
 // RANK CONFIGURATION LOGIC
 function getRankConfig(group, type) {
     const g = group ? group.toLowerCase() : '';
