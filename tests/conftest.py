@@ -11,6 +11,27 @@ from app.core.csrf import CSRF_COOKIE_NAME, CSRF_HEADER_NAME
 from app.core.security import create_access_token, get_password_hash
 from app.main import app
 from app.models.user import User
+from app.services import genai_service
+
+
+@pytest.fixture(autouse=True)
+def refuse_real_llm_calls(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail loudly rather than call the paid API.
+
+    A test that reaches OpenRouter spends real quota and depends on whatever
+    .env the machine happens to have, so the same run behaves differently on
+    a laptop and on CI. Tests that need the client replace this stub with
+    their own, which works because monkeypatch applies after this fixture.
+    """
+
+    def refuse(*args: object, **kwargs: object) -> None:
+        raise AssertionError(
+            "This test reached the real OpenRouter client. Patch "
+            "app.api.endpoints.words.get_usage_examples, or "
+            "genai_service.OpenAI, in the test itself."
+        )
+
+    monkeypatch.setattr(genai_service, "OpenAI", refuse)
 
 
 @pytest.fixture(name="session")

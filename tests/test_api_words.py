@@ -85,6 +85,47 @@ def test_create_word(auth_client: TestClient) -> None:
     assert data["id"] is not None
 
 
+def test_rejects_an_overlong_word(auth_client: TestClient) -> None:
+    """Unbounded input is forwarded verbatim to a paid LLM API."""
+    response = auth_client.post("/words/", json={"word": "a" * 5000})
+
+    assert response.status_code == 422
+
+
+def test_rejects_a_blank_word(auth_client: TestClient) -> None:
+    response = auth_client.post("/words/", json={"word": "   "})
+
+    assert response.status_code == 422
+
+
+def test_update_stores_the_word_lowercased(auth_client: TestClient) -> None:
+    """Creation lowercases, so an update that does not breaks the invariant."""
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("take off"),
+    ):
+        created = auth_client.post("/words/", json={"word": "take off"}).json()
+
+    response = auth_client.put(f"/words/{created['id']}", json={"word": "Take Off"})
+
+    assert response.status_code == 200
+    assert response.json()["word"] == "take off"
+
+
+def test_duplicate_detection_survives_an_update(auth_client: TestClient) -> None:
+    """A mixed-case update used to hide the row from the duplicate check."""
+    with patch(
+        "app.api.endpoints.words.get_usage_examples",
+        return_value=make_word_info("take off"),
+    ):
+        created = auth_client.post("/words/", json={"word": "take off"}).json()
+        auth_client.put(f"/words/{created['id']}", json={"word": "Take Off"})
+
+        duplicate = auth_client.post("/words/", json={"word": "take off"})
+
+    assert duplicate.status_code == 409
+
+
 def test_create_and_read_word(auth_client: TestClient) -> None:
     with patch(
         "app.api.endpoints.words.get_usage_examples",
