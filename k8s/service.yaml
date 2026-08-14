@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: easy-vocab
+  namespace: easy-vocab
+spec:
+  selector:
+    app: easy-vocab
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000

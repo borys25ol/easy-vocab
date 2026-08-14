@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: easy-vocab
+  namespace: easy-vocab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: easy-vocab
+  template:
+    metadata:
+      labels:
+        app: easy-vocab
+    spec:
+      affinity:
+        podAntiAffinity:
+          # preferred, not required: one node must still be able to run both
+          # replicas while the other is down.
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: easy-vocab
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: web
+          # Rewritten by .github/workflows/build.yml on every push to main.
+          image: ghcr.io/borys25ol/easy-vocab:bootstrap
+          ports:
+            - name: http
+              containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: easy-vocab-config
+            - secretRef:
+                name: easy-vocab-env
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              # No CPU limit on purpose. A CPU limit throttles rather than
+              # protects, and the node has spare capacity.
+              memory: 512Mi
