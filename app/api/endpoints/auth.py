@@ -8,11 +8,7 @@ from sqlmodel import Session
 from app.api.deps import get_user_repository
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.security import (
-    DUMMY_PASSWORD_HASH,
-    create_access_token,
-    verify_password,
-)
+from app.core.security import DUMMY_PASSWORD_HASH, create_access_token, verify_password
 from app.repositories.user import UserRepository
 
 
@@ -45,6 +41,8 @@ async def login(
     password_matches = verify_password(password, stored_hash)
 
     if not user or not password_matches:
+        if user:
+            user_repo.record_failed_login(session=db, user=user)
         return templates.TemplateResponse(
             request,
             "login.html",
@@ -53,6 +51,22 @@ async def login(
             },
         )
 
+    # The password is right, so naming the lock tells the attacker nothing
+    # they could not already do. A wrong password still gets the generic
+    # message above, which keeps the lock from confirming the account exists.
+    if user.is_locked():
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {
+                "error": (
+                    "Too many failed attempts. "
+                    f"Try again in {settings.LOGIN_LOCKOUT_MINUTES} minutes."
+                ),
+            },
+        )
+
+    user_repo.clear_failed_logins(session=db, user=user)
     access_token = create_access_token(subject=user.username)
     samesite = settings.SESSION_COOKIE_SAMESITE
 

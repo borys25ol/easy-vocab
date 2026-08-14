@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev_secret_key_change_me"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     SESSION_COOKIE_NAME: str = "session"
+    MAX_FAILED_LOGIN_ATTEMPTS: int = 5
+    LOGIN_LOCKOUT_MINUTES: int = 15
     COOKIE_SECURE: bool | None = None
     COOKIE_SAMESITE: CookieSameSite = "lax"
     COOKIE_PATH: str = "/"
