@@ -5,19 +5,22 @@ metadata:
   name: easy-vocab-migrate
   namespace: easy-vocab
   annotations:
-    # Wave 1, not a PreSync hook. PreSync runs before the whole Sync phase,
-    # so on a first deployment the ConfigMap and Secret this Job needs do not
+    # A Sync hook, not PreSync. PreSync runs before the whole Sync phase, so
+    # on a first deployment the ConfigMap and Secret this Job needs do not
     # exist yet and the sync deadlocks: it waits for the hook, the hook waits
     # for resources the sync has not applied.
     #
-    # Waves order resources inside the Sync phase instead. Wave 0 is the
-    # configuration, wave 1 is this Job, wave 2 is the Deployment. ArgoCD
-    # treats a Job as healthy once it completes, so the rollout still waits
-    # for migrations.
+    # A Sync hook runs inside the Sync phase and honours sync waves, so it
+    # lands after the configuration in wave 0 and before the Deployment in
+    # wave 2.
+    argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/sync-wave: "1"
     # A Job's pod template is immutable and CI rewrites the image on every
-    # deploy, so an in-place update would be rejected.
-    argocd.argoproj.io/sync-options: Replace=true
+    # deploy. Deleting the previous Job before creating the next one avoids
+    # the update entirely. `Replace=true` does not work here: kubectl replace
+    # needs the full object, and Kubernetes generates spec.selector and the
+    # template labels itself, so replacing drops them and is rejected.
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   # The sealed-secrets controller needs a moment to turn the SealedSecret into
   # a Secret. ArgoCD counts the SealedSecret healthy immediately, so this Job
