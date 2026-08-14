@@ -1,8 +1,40 @@
 const isProd = !['localhost', '127.0.0.1'].includes(window.location.hostname);
 
+const CSRF_COOKIE_NAME = 'csrftoken';
+const CSRF_HEADER_NAME = 'X-CSRF-Token';
+const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS', 'TRACE'];
+
+function readCsrfToken() {
+    const prefix = `${CSRF_COOKIE_NAME}=`;
+    const match = document.cookie
+        .split('; ')
+        .find((entry) => entry.startsWith(prefix));
+    return match ? decodeURIComponent(match.slice(prefix.length)) : null;
+}
+
+// The server rejects a state-changing request whose token is missing or
+// does not match the cookie. Every write goes through here, so this is the
+// only place that has to echo it back.
+function withCsrfToken(options) {
+    const method = (options.method || 'GET').toUpperCase();
+    if (SAFE_METHODS.includes(method)) {
+        return options;
+    }
+
+    const token = readCsrfToken();
+    if (!token) {
+        return options;
+    }
+
+    return {
+        ...options,
+        headers: {...(options.headers || {}), [CSRF_HEADER_NAME]: token},
+    };
+}
+
 async function apiRequest(url, options = {}) {
     try {
-        const response = await fetch(url, options);
+        const response = await fetch(url, withCsrfToken(options));
         let payload = null;
         try {
             payload = await response.json();

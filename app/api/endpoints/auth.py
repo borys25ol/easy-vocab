@@ -5,10 +5,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 
-from app.api.deps import get_user_repository
+from app.api.deps import get_optional_user, get_user_repository
 from app.core.config import settings
+from app.core.csrf import verify_csrf
 from app.core.database import get_session
-from app.core.security import create_access_token, verify_password
+from app.core.security import DUMMY_PASSWORD_HASH, create_access_token, verify_password
+from app.models.user import User
 from app.repositories.user import UserRepository
 
 
@@ -23,7 +25,7 @@ async def login_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "login.html")
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Depends(verify_csrf)])
 async def login(
     request: Request,
     username: str = Form(...),
@@ -34,7 +36,15 @@ async def login(
     """Authenticate user and set session cookie."""
     user = user_repo.get_by_username(session=db, username=username)
 
-    if not user or not verify_password(password, user.hashed_password):
+    # Hash unconditionally. Returning early for an unknown username would
+    # answer in about a millisecond instead of the ~200 ms a bcrypt round
+    # takes, which tells an attacker the username exists.
+    stored_hash = user.hashed_password if user else DUMMY_PASSWORD_HASH
+    password_matches = verify_password(password, stored_hash)
+
+    if not user or not password_matches:
+        if user:
+            user_repo.record_failed_login(session=db, user=user)
         return templates.TemplateResponse(
             request,
             "login.html",
@@ -43,7 +53,26 @@ async def login(
             },
         )
 
-    access_token = create_access_token(subject=user.username)
+    # The password is right, so naming the lock tells the attacker nothing
+    # they could not already do. A wrong password still gets the generic
+    # message above, which keeps the lock from confirming the account exists.
+    if user.is_locked():
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {
+                "error": (
+                    "Too many failed attempts. "
+                    f"Try again in {settings.LOGIN_LOCKOUT_MINUTES} minutes."
+                ),
+            },
+        )
+
+    user_repo.clear_failed_logins(session=db, user=user)
+    access_token = create_access_token(
+        subject=user.username,
+        token_version=user.token_version,
+    )
     samesite = settings.SESSION_COOKIE_SAMESITE
 
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
@@ -61,9 +90,20 @@ async def login(
     return response
 
 
-@router.get("/logout")
-async def logout() -> RedirectResponse:
-    """Clear the session cookie and redirect to the login."""
+@router.post("/logout", dependencies=[Depends(verify_csrf)])
+async def logout(
+    db: Session = Depends(get_session),
+    user: User | None = Depends(get_optional_user),
+    user_repo: UserRepository = Depends(get_user_repository),
+) -> RedirectResponse:
+    """Revoke the issued tokens, clear the cookie, redirect to the login.
+
+    POST only. A GET logout fires from any <img> tag on a hostile page, and
+    a browser prefetch can trip it without the user doing anything.
+    """
+    if user:
+        user_repo.bump_token_version(session=db, user=user)
+
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     samesite = settings.SESSION_COOKIE_SAMESITE
     response.delete_cookie(

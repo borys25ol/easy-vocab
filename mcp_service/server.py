@@ -11,6 +11,7 @@ from sqlmodel import select
 
 from app.core.config import settings
 from app.core.database import session_scope
+from app.core.security import hash_mcp_api_key
 from app.models.user import User
 from app.models.word import Word
 from app.services.genai_service import get_usage_examples
@@ -31,8 +32,12 @@ class UserAuthMiddleware(Middleware):
         if not token:
             raise ToolError("Access denied: Invalid or missing token")
 
+        # The column holds a hash, so hash what the client sent and match on
+        # that. A leaked database row cannot be replayed as a key.
         with session_scope() as session:
-            statement = select(User).where(User.mcp_api_key == token)
+            statement = select(User).where(
+                User.mcp_api_key_hash == hash_mcp_api_key(token)
+            )
             user = session.exec(statement).first()
 
         if not user:

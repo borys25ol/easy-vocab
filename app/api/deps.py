@@ -33,18 +33,26 @@ async def get_current_user(
             detail="Not authenticated",
         )
 
-    username = decode_access_token(token)
-    if not username:
+    payload = decode_access_token(token)
+    if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid session",
         )
 
-    user = user_repo.get_by_username(session=db, username=username)
+    user = user_repo.get_by_username(session=db, username=payload.subject)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
+        )
+
+    # Logout raises the stored version, which strands every token issued
+    # before it. The signature alone is not enough to trust a token.
+    if user.token_version != payload.version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session revoked",
         )
     return user
 
@@ -54,16 +62,15 @@ async def get_optional_user(
     db: Session = Depends(get_session),
     user_repo: UserRepository = Depends(get_user_repository),
 ) -> User | None:
-    """Return the authenticated user if present."""
-    token = request.cookies.get(settings.SESSION_COOKIE_NAME)
-    if not token:
-        return None
+    """Return the authenticated user, or None when the session is unusable.
 
-    username = decode_access_token(token)
-    if not username:
+    Logout needs the user to revoke their tokens but must still clear the
+    cookie for a caller whose session already expired.
+    """
+    try:
+        return await get_current_user(request=request, db=db, user_repo=user_repo)
+    except HTTPException:
         return None
-
-    return user_repo.get_by_username(session=db, username=username)
 
 
 async def require_user_or_redirect(

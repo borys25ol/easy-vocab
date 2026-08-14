@@ -24,11 +24,15 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
 
     SECRET_KEY: str = "dev_secret_key_change_me"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    # 24 hours. A stolen token is usable until it expires, and logout now
+    # revokes tokens, so a week-long window bought convenience for no reason.
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     SESSION_COOKIE_NAME: str = "session"
+    MAX_FAILED_LOGIN_ATTEMPTS: int = 5
+    LOGIN_LOCKOUT_MINUTES: int = 15
     COOKIE_SECURE: bool | None = None
     COOKIE_SAMESITE: CookieSameSite = "lax"
+    COOKIE_SAMESITE_NONE_ACKNOWLEDGED: bool = False
     COOKIE_PATH: str = "/"
     COOKIE_DOMAIN: str | None = None
     MCP_PORT: int = 6432
@@ -53,6 +57,7 @@ class Settings(BaseSettings):
             for name, default in (
                 ("SECRET_KEY", "dev_secret_key_change_me"),
                 ("OPENROUTER_API_KEY", "unknown"),
+                ("POSTGRES_PASSWORD", "unknown"),
             )
             if getattr(self, name) == default
         ]
@@ -60,6 +65,24 @@ class Settings(BaseSettings):
             raise ValueError(
                 "ENV=production but these still hold development defaults: "
                 + ", ".join(insecure)
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _refuse_unacknowledged_samesite_none(self) -> "Settings":
+        """Make dropping the browser-side CSRF defence a deliberate act.
+
+        SameSite=none sends the session cookie on every cross-site request.
+        The CSRF token still stands in the way, but losing a layer this way
+        should be a decision someone wrote down, not a config typo.
+        """
+        if (
+            self.COOKIE_SAMESITE == "none"
+            and not self.COOKIE_SAMESITE_NONE_ACKNOWLEDGED
+        ):
+            raise ValueError(
+                "COOKIE_SAMESITE=none sends the session cookie cross-site. "
+                "Set COOKIE_SAMESITE_NONE_ACKNOWLEDGED=true to confirm."
             )
         return self
 

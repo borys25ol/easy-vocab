@@ -153,8 +153,13 @@
                         <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">👤 {{ user.username
                             }}</span>
                     <div class="h-4 w-[1px] bg-slate-200"></div>
-                    <a href="/logout"
-                       class="text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider">Logout</a>
+                    <form action="/logout" method="post" class="contents">
+                        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+                        <button type="submit"
+                                class="text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider">
+                            Logout
+                        </button>
+                    </form>
                 </div>
 
                 <!-- Logo -->

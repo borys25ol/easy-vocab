@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session
 
 from app.api.deps import get_current_user, get_word_repository
+from app.core.csrf import verify_csrf
 from app.core.database import get_session
 from app.models.user import User
 from app.models.word import Word
@@ -12,7 +13,11 @@ from app.schemas.word import WordCreate, WordListResponse, WordRead, WordUpdate
 from app.services.genai_service import get_usage_examples
 
 
-router = APIRouter(dependencies=[Depends(get_current_user)])
+# Every route below already injects get_current_user to read the user, and
+# FastAPI resolves a dependency once per request, so no router-level copy.
+# verify_csrf is router-level because it takes no arguments the routes need
+# and ignores safe methods on its own.
+router = APIRouter(dependencies=[Depends(verify_csrf)])
 
 
 def _require_user_id(user: User) -> int:

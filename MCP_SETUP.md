@@ -105,6 +105,10 @@ Can you add the idiom "break the ice"?
 Each user has a unique MCP API key generated via CLI. Pass it in the
 `EASY_VOCAB_API_KEY` header for MCP requests.
 
+The database stores only a SHA-256 hash of the key. Every command below
+prints the key once. Save it then, because it cannot be recovered later.
+Lost a key? Rotate it.
+
 ### Create a user (prints key once)
 ```bash
 python manage.py create-user --username <name> --password <password>
@@ -123,7 +127,7 @@ python manage.py backfill-mcp-keys
 ### Migration for existing databases
 
 ```bash
-uv run python -m scripts.add_user_mcp_api_key
+make db-upgrade
 ```
 
 ## Troubleshooting
