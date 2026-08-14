@@ -106,7 +106,7 @@
         options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = "w-full p-4 rounded-2xl border-2 border-slate-100 font-bold text-slate-700 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left flex justify-between items-center group";
-            btn.innerHTML = `<span>${opt.word}</span><span class="opacity-0 group-hover:opacity-100 transition-opacity">→</span>`;
+            btn.innerHTML = `<span>${escapeHtml(opt.word)}</span><span class="opacity-0 group-hover:opacity-100 transition-opacity">→</span>`;
             btn.onclick = () => checkAnswer(opt.id === currentWord.id, btn);
             container.appendChild(btn);
         });
