@@ -2,6 +2,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
   name: easy-vocab-config
   namespace: easy-vocab
 data:
