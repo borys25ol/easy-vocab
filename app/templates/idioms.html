@@ -32,6 +32,28 @@
     <div id="scrollSentinel" class="h-8"></div>
 </div>
 
+<div id="editModal" class="modal">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md mx-4">
+        <h2 class="text-2xl font-bold mb-6">Edit</h2>
+        <input type="hidden" id="edit_id">
+        <div class="space-y-4">
+            <input type="text" id="edit_target"
+                   class="w-full p-3 border rounded-xl outline-none focus:ring-2 ring-indigo-500 bg-slate-50">
+            <input type="text" id="edit_translation"
+                   class="w-full p-3 border rounded-xl outline-none focus:ring-2 ring-indigo-500 bg-slate-50">
+            <input type="text" id="edit_category"
+                   class="w-full p-3 border rounded-xl outline-none focus:ring-2 ring-indigo-500 bg-slate-50">
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveEdit()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">Save
+                </button>
+                <button onclick="closeModal('editModal')"
+                        class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="deleteModal" class="modal">
     <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm mx-4 text-center">
         <div
@@ -119,6 +141,28 @@
 
     function closeModal(id) {
         document.getElementById(id).classList.remove('active');
+    }
+
+    function openEditModal(id, word, trans, cat) {
+        document.getElementById('edit_id').value = id;
+        document.getElementById('edit_target').value = word;
+        document.getElementById('edit_translation').value = trans;
+        document.getElementById('edit_category').value = cat;
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    async function saveEdit() {
+        const id = document.getElementById('edit_id').value;
+        const w = document.getElementById('edit_target').value;
+        const t = document.getElementById('edit_translation').value;
+        const c = document.getElementById('edit_category').value;
+        const {error} = await apiPut(`/words/${id}`, {word: w, translation: t, category: c});
+        if (error) {
+            showToast(error);
+            return;
+        }
+        closeModal('editModal');
+        loadIdioms({reset: true});
     }
 
     function requestDelete(id) {
