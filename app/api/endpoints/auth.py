@@ -5,10 +5,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 
-from app.api.deps import get_user_repository
+from app.api.deps import get_optional_user, get_user_repository
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.security import DUMMY_PASSWORD_HASH, create_access_token, verify_password
+from app.models.user import User
 from app.repositories.user import UserRepository
 
 
@@ -67,7 +68,10 @@ async def login(
         )
 
     user_repo.clear_failed_logins(session=db, user=user)
-    access_token = create_access_token(subject=user.username)
+    access_token = create_access_token(
+        subject=user.username,
+        token_version=user.token_version,
+    )
     samesite = settings.SESSION_COOKIE_SAMESITE
 
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
@@ -85,9 +89,20 @@ async def login(
     return response
 
 
-@router.get("/logout")
-async def logout() -> RedirectResponse:
-    """Clear the session cookie and redirect to the login."""
+@router.post("/logout")
+async def logout(
+    db: Session = Depends(get_session),
+    user: User | None = Depends(get_optional_user),
+    user_repo: UserRepository = Depends(get_user_repository),
+) -> RedirectResponse:
+    """Revoke the issued tokens, clear the cookie, redirect to the login.
+
+    POST only. A GET logout fires from any <img> tag on a hostile page, and
+    a browser prefetch can trip it without the user doing anything.
+    """
+    if user:
+        user_repo.bump_token_version(session=db, user=user)
+
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     samesite = settings.SESSION_COOKIE_SAMESITE
     response.delete_cookie(

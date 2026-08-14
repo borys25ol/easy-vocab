@@ -72,7 +72,9 @@ def auth_client_fixture(
     client_factory: Callable[[], TestClient], test_user: User
 ) -> TestClient:
     client = client_factory()
-    access_token = create_access_token(subject=test_user.username)
+    access_token = create_access_token(
+        subject=test_user.username, token_version=test_user.token_version
+    )
     client.cookies.update({settings.SESSION_COOKIE_NAME: access_token})
     return client
 
@@ -82,6 +84,8 @@ def auth_client_2_fixture(
     client_factory: Callable[[], TestClient], test_user_2: User
 ) -> TestClient:
     client = client_factory()
-    access_token = create_access_token(subject=test_user_2.username)
+    access_token = create_access_token(
+        subject=test_user_2.username, token_version=test_user_2.token_version
+    )
     client.cookies.update({settings.SESSION_COOKIE_NAME: access_token})
     return client

@@ -14,6 +14,14 @@ class UserRepository:
         statement = select(User).where(User.username == username)
         return session.exec(statement).first()
 
+    def bump_token_version(self, session: Session, user: User) -> User:
+        """Revoke every token already issued to this user."""
+        user.token_version += 1
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
     def record_failed_login(self, session: Session, user: User) -> User:
         """Count a failed attempt and lock the account once it hits the limit."""
         user.failed_login_count += 1

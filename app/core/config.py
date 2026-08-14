@@ -24,7 +24,9 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
 
     SECRET_KEY: str = "dev_secret_key_change_me"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    # 24 hours. A stolen token is usable until it expires, and logout now
+    # revokes tokens, so a week-long window bought convenience for no reason.
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     SESSION_COOKIE_NAME: str = "session"
     MAX_FAILED_LOGIN_ATTEMPTS: int = 5
     LOGIN_LOCKOUT_MINUTES: int = 15

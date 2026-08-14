@@ -154,12 +154,58 @@ def test_lock_lifts_once_the_window_passes(
 
 
 def test_logout(auth_client: TestClient) -> None:
-    response = auth_client.get("/logout", follow_redirects=False)
+    response = auth_client.post("/logout", follow_redirects=False)
     assert response.status_code == status.HTTP_303_SEE_OTHER
     assert response.headers["location"] == "/login"
     # Check if the response deletes the session cookie
     cookie = response.cookies.get(settings.SESSION_COOKIE_NAME)
     assert cookie == "" or cookie is None
+
+
+def test_logout_rejects_get(auth_client: TestClient) -> None:
+    """A GET logout fires from any <img> tag on a hostile page, or a prefetch."""
+    response = auth_client.get("/logout", follow_redirects=False)
+
+    assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+
+def test_logout_invalidates_the_issued_token(auth_client: TestClient) -> None:
+    """Clearing the cookie is not enough: a copied token must stop working.
+
+    Anyone who captured the token could otherwise keep using it for the whole
+    expiry window, logout or not.
+    """
+    stolen = auth_client.cookies[settings.SESSION_COOKIE_NAME]
+
+    auth_client.post("/logout", follow_redirects=False)
+
+    auth_client.cookies.set(settings.SESSION_COOKIE_NAME, stolen)
+    response = auth_client.get("/words", follow_redirects=False)
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_token_without_a_version_claim_is_rejected(
+    client: TestClient, test_user: User
+) -> None:
+    """A token predating the revocation claim cannot be revoked, so refuse it."""
+    from jose import jwt
+
+    from app.core.security import ALGORITHM
+
+    legacy = jwt.encode(
+        {
+            "sub": test_user.username,
+            "exp": datetime.now(UTC) + timedelta(minutes=5),
+        },
+        settings.SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
+    client.cookies.set(settings.SESSION_COOKIE_NAME, legacy)
+
+    response = client.get("/words", follow_redirects=False)
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_protected_route_redirect(client: TestClient) -> None:

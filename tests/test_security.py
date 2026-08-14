@@ -50,19 +50,22 @@ def test_passlib_is_not_imported() -> None:
 
 def test_jwt_tokens() -> None:
     subject = "testuser"
-    token = create_access_token(subject=subject)
+    token = create_access_token(subject=subject, token_version=3)
     assert token is not None
 
-    decoded_subject = decode_access_token(token)
-    assert decoded_subject == subject
+    payload = decode_access_token(token)
+    assert payload is not None
+    assert payload.subject == subject
+    assert payload.version == 3
 
 
 def test_jwt_token_expiration() -> None:
     subject = "testuser"
     # Create an expired token
-    token = create_access_token(subject=subject, expires_delta=timedelta(seconds=-1))
-    decoded_subject = decode_access_token(token)
-    assert decoded_subject is None
+    token = create_access_token(
+        subject=subject, token_version=0, expires_delta=timedelta(seconds=-1)
+    )
+    assert decode_access_token(token) is None
 
 
 def test_jwt_token_without_subject_is_rejected() -> None:

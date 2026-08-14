@@ -15,6 +15,11 @@ class User(SQLModel, table=True):
     hashed_password: str
     mcp_api_key: str | None = Field(default=None, index=True, unique=True)
 
+    # Bumped on logout. Tokens carry the value they were issued with, so
+    # raising it here rejects every token handed out earlier. Without it a
+    # captured token stays usable for the whole expiry window despite logout.
+    token_version: int = Field(default=0)
+
     # Login throttling. The counter lives in the database rather than in
     # process memory because the deployment runs several replicas, and a
     # per-process counter would give an attacker one allowance per pod.

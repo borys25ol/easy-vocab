@@ -1,7 +1,7 @@
 import base64
 import hashlib
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, NamedTuple
 
 import bcrypt
 from jose import jwt
@@ -59,8 +59,17 @@ def get_password_hash(password: str) -> str:
     return _SHA256_SCHEME_PREFIX + hashed.decode("utf-8")
 
 
+class TokenPayload(NamedTuple):
+    """The claims the application acts on."""
+
+    subject: str
+    version: int
+
+
 def create_access_token(
-    subject: str | Any, expires_delta: timedelta | None = None
+    subject: str | Any,
+    token_version: int,
+    expires_delta: timedelta | None = None,
 ) -> str:
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
@@ -68,20 +77,26 @@ def create_access_token(
         expire = datetime.now(UTC) + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
-    to_encode = {"exp": expire, "sub": str(subject)}
+    to_encode = {"exp": expire, "sub": str(subject), "ver": token_version}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-def decode_access_token(token: str) -> str | None:
-    """Return the subject of a valid token, or None for any invalid one.
+def decode_access_token(token: str) -> TokenPayload | None:
+    """Return the claims of a valid token, or None for any invalid one.
 
     A signed token can still be unusable, for example when it carries no sub
-    claim. Callers treat None as "not authenticated", so a missing claim must
-    return None rather than raise and turn a 401 into a 500.
+    or no ver claim. Callers treat None as "not authenticated", so a missing
+    claim must return None rather than raise and turn a 401 into a 500.
+
+    A token minted before ver existed cannot be revoked, so it is refused too.
+    That costs everyone one sign in on the deploy that introduces the claim.
     """
     try:
         decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
-        return decoded_token["sub"]
-    except (jwt.JWTError, KeyError):
+        return TokenPayload(
+            subject=decoded_token["sub"],
+            version=int(decoded_token["ver"]),
+        )
+    except (jwt.JWTError, KeyError, TypeError, ValueError):
         return None
