@@ -4,11 +4,6 @@ on:
   push:
     branches:
       - main
-      # Bootstrap only. Removed once main can build on its own;
-      # `workflow_dispatch` cannot reach a workflow that is not yet on the
-      # default branch, so pushing the branch is the only way to get a first
-      # image.
-      - feature/kubernetes-deploy
     paths-ignore:
       - "k8s/deployment.yaml"
       - "k8s/migrate-job.yaml"
