@@ -118,7 +118,17 @@ This approach allowed for rapid iteration while focusing on delivering an excell
       export MCP_HOST=0.0.0.0
       ```
 
-5. **Create an Admin User**:
+5. **Apply database migrations**:
+    ```bash
+    alembic upgrade head
+    ```
+
+   Migrations no longer run when the application starts. In the cluster a
+   Kubernetes Job applies them before each rollout, so replicas never race on
+   the same migration. Locally that means running this yourself after pulling
+   schema changes.
+
+6. **Create an Admin User**:
     ```bash
     make create-user
     ```
@@ -137,7 +147,7 @@ cd easy-vocab
 # Copy environment template
 cp .env.example .env
 
-# Update .env.production with your credentials
+# Update .env with your credentials
 nano .env
 
 # Start all services (web, mcp, postgres)
@@ -147,21 +157,14 @@ make docker-up
 make docker-up-d
 ```
 
-**Production (External PostgreSQL):**
-```bash
-# Clone the repository
-git clone https://github.com/borys25ol/easy-vocab.git
-cd easy-vocab
+**Production:**
 
-# Copy environment template
-cp .env.example .env.production
+Production does not use Docker Compose. The application runs on a Kubernetes
+cluster and is delivered by ArgoCD: a push to `main` builds an `arm64` image,
+publishes it to GHCR, and the cluster pulls the change from git. Nothing is
+deployed by hand.
 
-# Update .env.production with your credentials
-nano .env.production
-
-# Start production services
-make docker-prod-up
-```
+The manifests live in `k8s/`. See "Deployment" below.
 
 ### Running App
 
@@ -190,17 +193,20 @@ make docker-logs
 make docker-down
 ```
 
-**Production:**
-```bash
-# Start production services
-make docker-prod-up
+### Deployment
 
-# View logs
-make docker-prod-logs
+Pushing to `main` is the whole deployment. A GitHub Actions workflow builds a
+`linux/arm64` image, pushes it to `ghcr.io/borys25ol/easy-vocab` tagged with
+the commit SHA, and writes that tag into `k8s/`. ArgoCD applies the result.
 
-# Stop services
-make docker-prod-down
-```
+    kubectl -n easy-vocab get pods
+    kubectl -n easy-vocab logs deploy/easy-vocab
+
+Rolling back means reverting the commit that changed the image tag. There is
+no separate rollback command, and no server to log into.
+
+Database migrations run in a Kubernetes Job before each rollout, never inside
+the application pods.
 
 
 ## 🗄️ Database Migrations
@@ -319,7 +325,9 @@ EasyVocab uses a **multi-stage Docker build** for optimal image size and securit
 ### Environment Files
 
 - **`.env`** - Local development (contains your credentials)
-- **`.env.production`** - Production configuration (NEVER commit to Git)
+
+Production configuration does not live in a file. It comes from a Kubernetes
+ConfigMap and a sealed Secret, both applied by ArgoCD.
 
 ### Makefile Commands
 
@@ -329,10 +337,6 @@ make docker-build      # Build Docker images
 make docker-up         # Start services
 make docker-down       # Stop services
 make docker-logs       # View logs
-
-# Production
-make docker-prod-build  # Build production Docker images
-make docker-prod-up     # Start production services
-make docker-prod-down   # Stop production services
-make docker-prod-logs   # View production logs
 ```
+
+Production has no Makefile targets. Deployment happens on push to `main`.

@@ -1,0 +1,28 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: easy-vocab-migrate
+  namespace: easy-vocab
+  annotations:
+    # PreSync: ArgoCD runs this to completion before touching the Deployment.
+    argocd.argoproj.io/hook: PreSync
+    # Keep the previous Job until the next one starts, so a failure can be
+    # read after the fact instead of vanishing.
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          # Must match the Deployment. CI rewrites both together, or
+          # migrations would apply a schema the application does not match.
+          image: ghcr.io/borys25ol/easy-vocab:10baf2ab117ca22b1a2a11e4004beada3ab66d7b
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            - configMapRef:
+                name: easy-vocab-config
+            - secretRef:
+                name: easy-vocab-env

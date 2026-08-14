@@ -24,3 +24,9 @@ test.py
 fill.py
 traefik/acme.json
 mcp_client.py
+
+# macOS finder metadata
+.DS_Store
+
+# Local tooling state
+.memsearch/

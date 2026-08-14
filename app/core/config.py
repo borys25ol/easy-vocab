@@ -1,5 +1,6 @@
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,6 +35,33 @@ class Settings(BaseSettings):
     MCP_HOST: str = "0.0.0.0"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @model_validator(mode="after")
+    def _refuse_development_defaults_in_production(self) -> "Settings":
+        """Fail loudly rather than run on a publicly known secret.
+
+        Every field here has a default, so a secret that never reaches the
+        process does not stop it. Without this check the application starts,
+        signs session cookies with a value published in this repository, and
+        looks entirely healthy.
+        """
+        if self.ENV.lower() != "production":
+            return self
+
+        insecure = [
+            name
+            for name, default in (
+                ("SECRET_KEY", "dev_secret_key_change_me"),
+                ("OPENROUTER_API_KEY", "unknown"),
+            )
+            if getattr(self, name) == default
+        ]
+        if insecure:
+            raise ValueError(
+                "ENV=production but these still hold development defaults: "
+                + ", ".join(insecure)
+            )
+        return self
 
     @property
     def DATABASE_URL(self) -> str:

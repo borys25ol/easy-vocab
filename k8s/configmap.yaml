@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: easy-vocab-config
+  namespace: easy-vocab
+data:
+  # production turns on secure session cookies and arms the startup guard
+  # that refuses development defaults.
+  ENV: production
+  OPENROUTER_MODEL: google/gemini-2.5-flash
