@@ -59,6 +59,16 @@ def get_password_hash(password: str) -> str:
     return _SHA256_SCHEME_PREFIX + hashed.decode("utf-8")
 
 
+def hash_mcp_api_key(api_key: str) -> str:
+    """Hash an MCP key for storage.
+
+    Plain SHA-256 rather than bcrypt: the key is 256 bits of output from
+    secrets.token_urlsafe, so there is no guessable input to slow down, and
+    every MCP call would otherwise pay for a bcrypt round.
+    """
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
+
 class TokenPayload(NamedTuple):
     """The claims the application acts on."""
 

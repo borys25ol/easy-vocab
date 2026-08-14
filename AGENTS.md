@@ -232,7 +232,8 @@ MCP_HOST=0.0.0.0
 
 - Each user has a unique MCP API key generated via CLI.
 - Send the key in the `EASY_VOCAB_API_KEY` header for MCP requests.
-- For existing databases, run `uv run python -m scripts.add_user_mcp_api_key`.
+- Only a SHA-256 hash of the key is stored; the CLI prints the key once.
+- For existing databases, run `make db-upgrade`.
 
 ### Settings Pattern
 Uses `pydantic-settings.BaseSettings` in `app/core/config.py`:

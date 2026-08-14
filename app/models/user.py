@@ -13,7 +13,9 @@ class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     username: str = Field(index=True, unique=True)
     hashed_password: str
-    mcp_api_key: str | None = Field(default=None, index=True, unique=True)
+    # SHA-256 of the key, never the key itself. The plaintext is shown once
+    # when it is generated, so a database dump yields nothing usable.
+    mcp_api_key_hash: str | None = Field(default=None, index=True, unique=True)
 
     # Bumped on logout. Tokens carry the value they were issued with, so
     # raising it here rejects every token handed out earlier. Without it a

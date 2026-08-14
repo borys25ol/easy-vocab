@@ -251,6 +251,9 @@ The server will start on `http://localhost:6432`
 
 - Each user has a unique MCP API key generated via CLI.
 - Send the key in the `EASY_VOCAB_API_KEY` header for all MCP requests.
+- The database stores only a SHA-256 hash of the key. Each command below
+  prints the key once. Save it then, because it cannot be recovered later.
+  Lost a key? Rotate it.
 
 ```bash
 # Create user and print MCP key
@@ -263,10 +266,10 @@ python manage.py rotate-mcp-key --username <name>
 python manage.py backfill-mcp-keys
 ```
 
-If your database predates the `mcp_api_key` column, run:
+If your database predates the `mcp_api_key_hash` column, run the migrations:
 
 ```bash
-uv run python -m scripts.add_user_mcp_api_key
+make db-upgrade
 ```
 
 ### Available Tools

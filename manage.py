@@ -4,7 +4,7 @@ import click
 from sqlmodel import select
 
 from app.core.database import session_scope
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, hash_mcp_api_key
 from app.models.user import User
 from app.models.word import Word  # noqa
 
@@ -33,7 +33,7 @@ def create_user(username: str, password: str) -> None:
         user = User(
             username=username,
             hashed_password=hashed_password,
-            mcp_api_key=mcp_api_key,
+            mcp_api_key_hash=hash_mcp_api_key(mcp_api_key),
         )
         session.add(user)
         session.commit()
@@ -51,7 +51,7 @@ def rotate_mcp_key(username: str) -> None:
             return
 
         mcp_api_key = generate_mcp_api_key()
-        user.mcp_api_key = mcp_api_key
+        user.mcp_api_key_hash = hash_mcp_api_key(mcp_api_key)
         session.add(user)
         session.commit()
         click.echo(f"Success: MCP API key rotated for '{username}'.")
@@ -61,15 +61,18 @@ def rotate_mcp_key(username: str) -> None:
 def backfill_mcp_keys() -> None:
     """Generate MCP API keys for users missing one."""
     with session_scope() as session:
-        statement = select(User).where(User.mcp_api_key.is_(None))  # type: ignore
+        statement = select(User).where(User.mcp_api_key_hash.is_(None))  # type: ignore
         users = session.exec(statement).all()
         if not users:
             click.echo("No users missing MCP API keys.")
             return
 
         for user in users:
-            user.mcp_api_key = generate_mcp_api_key()
+            mcp_api_key = generate_mcp_api_key()
+            user.mcp_api_key_hash = hash_mcp_api_key(mcp_api_key)
             session.add(user)
+            # Printed once. Only the hash is stored, so it cannot be recovered.
+            click.echo(f"{user.username}: {mcp_api_key}")
         session.commit()
         click.echo(f"Backfilled MCP API keys for {len(users)} user(s).")
 
