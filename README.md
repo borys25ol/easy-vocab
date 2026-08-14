@@ -147,7 +147,7 @@ cd easy-vocab
 # Copy environment template
 cp .env.example .env
 
-# Update .env.production with your credentials
+# Update .env with your credentials
 nano .env
 
 # Start all services (web, mcp, postgres)
@@ -325,7 +325,9 @@ EasyVocab uses a **multi-stage Docker build** for optimal image size and securit
 ### Environment Files
 
 - **`.env`** - Local development (contains your credentials)
-- **`.env.production`** - Production configuration (NEVER commit to Git)
+
+Production configuration does not live in a file. It comes from a Kubernetes
+ConfigMap and a sealed Secret, both applied by ArgoCD.
 
 ### Makefile Commands
 
@@ -335,10 +337,6 @@ make docker-build      # Build Docker images
 make docker-up         # Start services
 make docker-down       # Stop services
 make docker-logs       # View logs
-
-# Production
-make docker-prod-build  # Build production Docker images
-make docker-prod-up     # Start production services
-make docker-prod-down   # Stop production services
-make docker-prod-logs   # View production logs
 ```
+
+Production has no Makefile targets. Deployment happens on push to `main`.
