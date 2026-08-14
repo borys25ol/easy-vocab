@@ -30,7 +30,7 @@ spec:
       containers:
         - name: web
           # Rewritten by .github/workflows/build.yml on every push to main.
-          image: ghcr.io/borys25ol/easy-vocab:5166e8b81038c8f83a54b556427b902a36da5b13
+          image: ghcr.io/borys25ol/easy-vocab:3a58ecaf9b91bb9d364c01c2e20afeb06a6fa07c
           ports:
             - name: http
               containerPort: 5000
