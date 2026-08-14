@@ -34,13 +34,18 @@ lint_fix:
 format:
 	ruff format .
 
+format_check:
+	ruff format --check .
+
 types:
 	ty check .
 
 test:
 	pytest
 
-check: lint types test
+# Mirrors the CI Checks workflow. Keep the two in step, or a green local run
+# stops meaning anything about the pull request.
+check: lint format_check types test
 
 # Docker commands
 docker-build:
