@@ -1,6 +1,7 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
 from app.api.deps import get_current_user, get_word_repository
@@ -83,12 +84,19 @@ def create_word(
     if existing:
         raise HTTPException(status_code=409, detail="Word already exists")
     word_info = get_usage_examples(word=word_text)
-    return word_repo.create_for_user(
-        session=session,
-        user_id=user_id,
-        word_text=word_text,
-        word_info=word_info,
-    )
+    try:
+        return word_repo.create_for_user(
+            session=session,
+            user_id=user_id,
+            word_text=word_text,
+            word_info=word_info,
+        )
+    except IntegrityError as exc:
+        # The check above cannot see a row inserted since it ran. The unique
+        # constraint catches that, and the caller deserves the same 409 as
+        # the request that lost by a wider margin.
+        session.rollback()
+        raise HTTPException(status_code=409, detail="Word already exists") from exc
 
 
 @router.get("/phrasal_roots")
