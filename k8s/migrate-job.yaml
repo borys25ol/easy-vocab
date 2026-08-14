@@ -5,13 +5,24 @@ metadata:
   name: easy-vocab-migrate
   namespace: easy-vocab
   annotations:
-    # PreSync: ArgoCD runs this to completion before touching the Deployment.
-    argocd.argoproj.io/hook: PreSync
-    # Keep the previous Job until the next one starts, so a failure can be
-    # read after the fact instead of vanishing.
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    # Wave 1, not a PreSync hook. PreSync runs before the whole Sync phase,
+    # so on a first deployment the ConfigMap and Secret this Job needs do not
+    # exist yet and the sync deadlocks: it waits for the hook, the hook waits
+    # for resources the sync has not applied.
+    #
+    # Waves order resources inside the Sync phase instead. Wave 0 is the
+    # configuration, wave 1 is this Job, wave 2 is the Deployment. ArgoCD
+    # treats a Job as healthy once it completes, so the rollout still waits
+    # for migrations.
+    argocd.argoproj.io/sync-wave: "1"
+    # A Job's pod template is immutable and CI rewrites the image on every
+    # deploy, so an in-place update would be rejected.
+    argocd.argoproj.io/sync-options: Replace=true
 spec:
-  backoffLimit: 2
+  # The sealed-secrets controller needs a moment to turn the SealedSecret into
+  # a Secret. ArgoCD counts the SealedSecret healthy immediately, so this Job
+  # can start a second early; the retries cover that gap.
+  backoffLimit: 6
   template:
     spec:
       restartPolicy: Never
