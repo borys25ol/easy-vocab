@@ -221,6 +221,21 @@ make db-revision MSG="add new column"
 make db-downgrade
 ```
 
+## 🔐 Session Security
+
+Sessions use a signed JWT in an HttpOnly cookie.
+
+- Logout revokes the token. It increments a version stored on the user row,
+  and every token issued earlier stops working.
+- Five failed logins lock an account for 15 minutes. Tune with
+  `MAX_FAILED_LOGIN_ATTEMPTS` and `LOGIN_LOCKOUT_MINUTES`.
+- Writes need a CSRF token. The server sets a `csrftoken` cookie and expects
+  the same value back, in the `X-CSRF-Token` header or a `csrf_token` form
+  field. `app/static/js/api.js` adds the header to every write it sends.
+- `COOKIE_SAMESITE=none` is refused unless you also set
+  `COOKIE_SAMESITE_NONE_ACKNOWLEDGED=true`. It sends the session cookie on
+  cross-site requests, so it should be a deliberate choice.
+
 ## 🤖 MCP Server Integration
 
 This project includes an **MCP (Model Context Protocol) server** that allows AI assistants to directly add words to your vocabulary database.

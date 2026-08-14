@@ -42,6 +42,30 @@ def test_production_refuses_default_postgres_password(
     assert "POSTGRES_PASSWORD" in str(excinfo.value)
 
 
+def test_samesite_none_needs_an_explicit_acknowledgement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """SameSite=none removes the browser-side CSRF defence, so make it loud."""
+    monkeypatch.setenv("COOKIE_SAMESITE", "none")
+    monkeypatch.delenv("COOKIE_SAMESITE_NONE_ACKNOWLEDGED", raising=False)
+
+    with pytest.raises(ValidationError) as excinfo:
+        Settings(_env_file=None)
+
+    assert "COOKIE_SAMESITE" in str(excinfo.value)
+
+
+def test_samesite_none_is_allowed_once_acknowledged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("COOKIE_SAMESITE", "none")
+    monkeypatch.setenv("COOKIE_SAMESITE_NONE_ACKNOWLEDGED", "true")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.COOKIE_SAMESITE == "none"
+
+
 def test_development_allows_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENV", "development")
     monkeypatch.delenv("SECRET_KEY", raising=False)

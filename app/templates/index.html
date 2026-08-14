@@ -154,6 +154,7 @@
                             }}</span>
                     <div class="h-4 w-[1px] bg-slate-200"></div>
                     <form action="/logout" method="post" class="contents">
+                        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                         <button type="submit"
                                 class="text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-wider">
                             Logout

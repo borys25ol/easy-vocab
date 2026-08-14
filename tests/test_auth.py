@@ -2,12 +2,29 @@ import statistics
 import time
 from datetime import UTC, datetime, timedelta
 
+import httpx
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.core.csrf import CSRF_COOKIE_NAME
 from app.models.user import User
+
+
+def post_login(client: TestClient, username: str, password: str) -> httpx.Response:
+    """Submit the login form the way a browser does, CSRF token included."""
+    if CSRF_COOKIE_NAME not in client.cookies:
+        client.get("/login")
+    return client.post(
+        "/login",
+        data={
+            "username": username,
+            "password": password,
+            "csrf_token": client.cookies[CSRF_COOKIE_NAME],
+        },
+        follow_redirects=False,
+    )
 
 
 def test_login_page_renders(client: TestClient) -> None:
@@ -17,22 +34,14 @@ def test_login_page_renders(client: TestClient) -> None:
 
 
 def test_login_success(client: TestClient, test_user: User) -> None:
-    response = client.post(
-        "/login",
-        data={"username": test_user.username, "password": "testpassword"},
-        follow_redirects=False,
-    )
+    response = post_login(client, test_user.username, "testpassword")
     assert response.status_code == status.HTTP_303_SEE_OTHER
     assert response.headers["location"] == "/"
     assert settings.SESSION_COOKIE_NAME in response.cookies
 
 
 def test_login_failure(client: TestClient, test_user: User) -> None:
-    response = client.post(
-        "/login",
-        data={"username": test_user.username, "password": "wrongpassword"},
-        follow_redirects=False,
-    )
+    response = post_login(client, test_user.username, "wrongpassword")
     assert response.status_code == status.HTTP_200_OK
     assert "Invalid credentials" in response.text
     assert settings.SESSION_COOKIE_NAME not in response.cookies
@@ -52,11 +61,7 @@ def test_unknown_username_costs_the_same_as_a_wrong_password(
         samples = []
         for _ in range(3):
             start = time.perf_counter()
-            client.post(
-                "/login",
-                data={"username": username, "password": "wrongpassword"},
-                follow_redirects=False,
-            )
+            post_login(client, username, "wrongpassword")
             samples.append(time.perf_counter() - start)
         return statistics.median(samples)
 
@@ -70,11 +75,7 @@ def test_unknown_username_costs_the_same_as_a_wrong_password(
 
 def fail_login(client: TestClient, username: str, times: int) -> None:
     for _ in range(times):
-        client.post(
-            "/login",
-            data={"username": username, "password": "wrongpassword"},
-            follow_redirects=False,
-        )
+        post_login(client, username, "wrongpassword")
 
 
 def test_account_locks_after_repeated_failures(
@@ -83,11 +84,7 @@ def test_account_locks_after_repeated_failures(
     """Without a lock, an attacker can keep guessing the password forever."""
     fail_login(client, test_user.username, settings.MAX_FAILED_LOGIN_ATTEMPTS)
 
-    response = client.post(
-        "/login",
-        data={"username": test_user.username, "password": "testpassword"},
-        follow_redirects=False,
-    )
+    response = post_login(client, test_user.username, "testpassword")
 
     assert response.status_code == status.HTTP_200_OK
     assert settings.SESSION_COOKIE_NAME not in response.cookies
@@ -99,16 +96,8 @@ def test_locked_account_reports_the_lock_to_the_right_password(
     """Only someone who knows the password learns the account is locked."""
     fail_login(client, test_user.username, settings.MAX_FAILED_LOGIN_ATTEMPTS)
 
-    locked = client.post(
-        "/login",
-        data={"username": test_user.username, "password": "testpassword"},
-        follow_redirects=False,
-    )
-    wrong = client.post(
-        "/login",
-        data={"username": test_user.username, "password": "stillwrong"},
-        follow_redirects=False,
-    )
+    locked = post_login(client, test_user.username, "testpassword")
+    wrong = post_login(client, test_user.username, "stillwrong")
 
     assert "Too many failed attempts" in locked.text
     assert "Invalid credentials" in wrong.text
@@ -121,11 +110,7 @@ def test_successful_login_clears_the_failure_count(
     """A user who remembers the password must not accumulate toward a lock."""
     fail_login(client, test_user.username, settings.MAX_FAILED_LOGIN_ATTEMPTS - 1)
 
-    response = client.post(
-        "/login",
-        data={"username": test_user.username, "password": "testpassword"},
-        follow_redirects=False,
-    )
+    response = post_login(client, test_user.username, "testpassword")
 
     assert response.status_code == status.HTTP_303_SEE_OTHER
     session.refresh(test_user)
@@ -143,11 +128,7 @@ def test_lock_lifts_once_the_window_passes(
     session.add(test_user)
     session.commit()
 
-    response = client.post(
-        "/login",
-        data={"username": test_user.username, "password": "testpassword"},
-        follow_redirects=False,
-    )
+    response = post_login(client, test_user.username, "testpassword")
 
     assert response.status_code == status.HTTP_303_SEE_OTHER
     assert settings.SESSION_COOKIE_NAME in response.cookies

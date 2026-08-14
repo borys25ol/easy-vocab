@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     LOGIN_LOCKOUT_MINUTES: int = 15
     COOKIE_SECURE: bool | None = None
     COOKIE_SAMESITE: CookieSameSite = "lax"
+    COOKIE_SAMESITE_NONE_ACKNOWLEDGED: bool = False
     COOKIE_PATH: str = "/"
     COOKIE_DOMAIN: str | None = None
     MCP_PORT: int = 6432
@@ -64,6 +65,24 @@ class Settings(BaseSettings):
             raise ValueError(
                 "ENV=production but these still hold development defaults: "
                 + ", ".join(insecure)
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _refuse_unacknowledged_samesite_none(self) -> "Settings":
+        """Make dropping the browser-side CSRF defence a deliberate act.
+
+        SameSite=none sends the session cookie on every cross-site request.
+        The CSRF token still stands in the way, but losing a layer this way
+        should be a decision someone wrote down, not a config typo.
+        """
+        if (
+            self.COOKIE_SAMESITE == "none"
+            and not self.COOKIE_SAMESITE_NONE_ACKNOWLEDGED
+        ):
+            raise ValueError(
+                "COOKIE_SAMESITE=none sends the session cookie cross-site. "
+                "Set COOKIE_SAMESITE_NONE_ACKNOWLEDGED=true to confirm."
             )
         return self
 

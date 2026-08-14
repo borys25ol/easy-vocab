@@ -7,6 +7,7 @@ from sqlmodel import Session
 
 from app.api.deps import get_optional_user, get_user_repository
 from app.core.config import settings
+from app.core.csrf import verify_csrf
 from app.core.database import get_session
 from app.core.security import DUMMY_PASSWORD_HASH, create_access_token, verify_password
 from app.models.user import User
@@ -24,7 +25,7 @@ async def login_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request, "login.html")
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Depends(verify_csrf)])
 async def login(
     request: Request,
     username: str = Form(...),
@@ -89,7 +90,7 @@ async def login(
     return response
 
 
-@router.post("/logout")
+@router.post("/logout", dependencies=[Depends(verify_csrf)])
 async def logout(
     db: Session = Depends(get_session),
     user: User | None = Depends(get_optional_user),

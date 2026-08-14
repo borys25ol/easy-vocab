@@ -7,6 +7,7 @@ from sqlmodel.pool import StaticPool
 
 from app.api.deps import get_session
 from app.core.config import settings
+from app.core.csrf import CSRF_COOKIE_NAME, CSRF_HEADER_NAME
 from app.core.security import create_access_token, get_password_hash
 from app.main import app
 from app.models.user import User
@@ -67,6 +68,17 @@ def client_fixture(client_factory: Callable[[], TestClient]) -> TestClient:
     return client_factory()
 
 
+def arm_csrf(client: TestClient) -> TestClient:
+    """Do what a browser does: collect the CSRF cookie, then echo it back.
+
+    Writes are rejected without the header, so every authenticated client in
+    the suite needs this to reach the endpoint under test.
+    """
+    client.get("/login")
+    client.headers[CSRF_HEADER_NAME] = client.cookies[CSRF_COOKIE_NAME]
+    return client
+
+
 @pytest.fixture(name="auth_client")
 def auth_client_fixture(
     client_factory: Callable[[], TestClient], test_user: User
@@ -76,7 +88,7 @@ def auth_client_fixture(
         subject=test_user.username, token_version=test_user.token_version
     )
     client.cookies.update({settings.SESSION_COOKIE_NAME: access_token})
-    return client
+    return arm_csrf(client)
 
 
 @pytest.fixture(name="auth_client_2")
@@ -88,4 +100,4 @@ def auth_client_2_fixture(
         subject=test_user_2.username, token_version=test_user_2.token_version
     )
     client.cookies.update({settings.SESSION_COOKIE_NAME: access_token})
-    return client
+    return arm_csrf(client)
