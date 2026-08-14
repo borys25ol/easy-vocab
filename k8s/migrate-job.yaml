@@ -19,7 +19,7 @@ spec:
         - name: migrate
           # Must match the Deployment. CI rewrites both together, or
           # migrations would apply a schema the application does not match.
-          image: ghcr.io/borys25ol/easy-vocab:10baf2ab117ca22b1a2a11e4004beada3ab66d7b
+          image: ghcr.io/borys25ol/easy-vocab:85f1555cbfaf7813bf7b93382c686a1d25b93ebe
           command: ["alembic", "upgrade", "head"]
           envFrom:
             - configMapRef:
