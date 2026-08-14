@@ -28,6 +28,20 @@ dependencies = [
 norecursedirs = [".ve"]
 addopts = "-ra -q -s -v"
 
+# pydantic-settings accepts _env_file and its siblings through
+# BaseSettings.__init__, but ty synthesises __init__ from the model fields and
+# so reports every such call as an unknown argument. The tests pass
+# _env_file=None to keep the real .env out of the run, which left `ty check`
+# permanently failing.
+#
+# Scoped to tests on purpose. Turning the rule off globally would also hide a
+# genuine wrong-keyword call in app/, which is the case worth catching.
+[[tool.ty.overrides]]
+include = ["tests/**"]
+
+[tool.ty.overrides.rules]
+unknown-argument = "ignore"
+
 [dependency-groups]
 dev = [
     "pre-commit==4.5.1",
